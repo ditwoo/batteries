@@ -4,8 +4,6 @@
 
 ### Tests
 
-To run tests you just need to:
-
 ```bash
 make tests
 ```
