@@ -1,4 +1,3 @@
-# flake: noqua
 import pytest
 import numpy as np
 
