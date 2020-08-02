@@ -1,14 +1,7 @@
 import os
 import json
 from pathlib import Path
-from queue import PriorityQueue
-from collections import namedtuple
 from typing import Union, Mapping, Any
-
-# installed
-import torch
-import torch.nn as nn
-import torch.optim as optim
 
 # local files
 from .utils import save_checkpoint

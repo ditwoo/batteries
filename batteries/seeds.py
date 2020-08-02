@@ -4,6 +4,11 @@ from packaging.version import parse, Version
 
 
 def seed_all(seed: int) -> None:
+    """Fix all seeds so results can be reproducible.
+
+    Args:
+        seed (int): random seed
+    """
     try:
         import torch
     except ImportError:
