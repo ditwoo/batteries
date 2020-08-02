@@ -6,7 +6,7 @@
 
 1. seed everything
 
-2. create and initilize (probably load from weights from checkpoint) model, optimizer, scheduler
+2. create and initilize (probably load weights from checkpoint) model, optimizer, scheduler
 
 3. create datasets/dataloaders
 
