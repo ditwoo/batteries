@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.utils.data import TensorDataset, Subset, DataLoader
 
 # local files
-from batteries import tv
+from batteries import engine
 from batteries import seeds
 
 
@@ -45,8 +45,8 @@ def test_train_fn_on_cpu():
     metrics = []
     n_epochs = 5
     for epoch_idx in range(n_epochs):
-        train_loss = tv.train_fn(model, train_loader, device, criterion, optimizer)
-        valid_loss = tv.valid_fn(model, valid_loader, device, criterion)
+        train_loss = engine.train_fn(model, train_loader, device, criterion, optimizer)
+        valid_loss = engine.valid_fn(model, valid_loader, device, criterion)
         metrics.append(
             {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
         )
@@ -93,8 +93,8 @@ def test_train_fn_on_cuda_0():
     metrics = []
     n_epochs = 5
     for epoch_idx in range(n_epochs):
-        train_loss = tv.train_fn(model, train_loader, device, criterion, optimizer)
-        valid_loss = tv.valid_fn(model, valid_loader, device, criterion)
+        train_loss = engine.train_fn(model, train_loader, device, criterion, optimizer)
+        valid_loss = engine.valid_fn(model, valid_loader, device, criterion)
         metrics.append(
             {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
         )
@@ -143,8 +143,8 @@ def test_train_fn_dp_cuda():
     metrics = []
     n_epochs = 5
     for epoch_idx in range(n_epochs):
-        train_loss = tv.train_fn(model, train_loader, device, criterion, optimizer)
-        valid_loss = tv.valid_fn(model, valid_loader, device, criterion)
+        train_loss = engine.train_fn(model, train_loader, device, criterion, optimizer)
+        valid_loss = engine.valid_fn(model, valid_loader, device, criterion)
         metrics.append(
             {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
         )
