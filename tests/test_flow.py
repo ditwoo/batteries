@@ -7,8 +7,7 @@ import torch.optim as optim
 from torch.utils.data import TensorDataset, Subset, DataLoader
 
 # local files
-from batteries import engine
-from batteries import seeds
+from batteries import engine, seed_all
 
 
 IS_CUDA_PRESENT = torch.cuda.is_available()
@@ -28,7 +27,7 @@ class Projector(nn.Module):
 
 
 def test_train_fn_on_cpu():
-    seeds.seed_all(2020)
+    seed_all(2020)
 
     n_records, n_features = int(1e4), 10
     batch_size = 32
@@ -76,7 +75,7 @@ def test_train_fn_on_cpu():
 
 @pytest.mark.skipif(not IS_CUDA_PRESENT, reason="missing cuda")
 def test_train_fn_on_cuda_0():
-    seeds.seed_all(2020)
+    seed_all(2020)
 
     n_records, n_features = int(1e4), 10
     batch_size = 32
@@ -126,7 +125,7 @@ def test_train_fn_on_cuda_0():
 
 @pytest.mark.skipif(not IS_MULTIPLE_CUDA_DEVICES, reason="not enough cuda devices")
 def test_train_fn_dp_cuda():
-    seeds.seed_all(2020)
+    seed_all(2020)
 
     n_records, n_features = int(1e4), 10
     batch_size = 32
