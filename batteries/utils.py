@@ -1,8 +1,13 @@
 import os
-import torch
+import random
 import shutil
 from pathlib import Path
 from typing import Mapping, Any, Union, Sequence
+
+from packaging.version import parse, Version
+import numpy as np
+import torch
+from torch.backends import cudnn
 
 
 def t2d(
@@ -30,6 +35,26 @@ def t2d(
         for _key, _tensor in tensor.items():
             res[_key] = t2d(_tensor, device)
         return res
+
+
+def make_checkpoint(
+    stage, epoch, model, optimizer=None, scheduler=None, metrics=None
+) -> dict:
+    checkpoint = {
+        "stage": stage,
+        "epoch": epoch,
+    }
+    if isinstance(model, torch.nn.DataParallel):
+        checkpoint["model_state_dict"] = model.module.state_dict()
+    else:
+        checkpoint["model_state_dict"] = model.state_dict()
+    if optimizer is not None:
+        checkpoint["optimizer_state_dict"] = optimizer.state_dict()
+    if scheduler is not None:
+        checkpoint["scheduler_state_dict"] = scheduler.state_dict()
+    if metrics is not None:
+        checkpoint["metrics"] = metrics
+    return checkpoint
 
 
 def save_checkpoint(
@@ -60,3 +85,36 @@ def save_checkpoint(
     if is_last:
         last_filename = os.path.join(str(logdir), "last.pth")
         shutil.copyfile(filename, last_filename)
+
+
+def seed_all(seed: int = 42) -> None:
+    """Fix all seeds so results can be reproducible.
+
+    Args:
+        seed (int): random seed
+    """
+    try:
+        import torch
+    except ImportError:
+        pass
+    else:
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+    try:
+        import tensorflow as tf
+    except ImportError:
+        pass
+    else:
+        if parse(tf.__version__) >= Version("2.0.0"):
+            tf.random.set_seed(seed)
+        elif parse(tf.__version__) <= Version("1.13.2"):
+            tf.set_random_seed(seed)
+        else:
+            tf.compat.v1.set_random_seed(seed)
+
+    random.seed(seed)
+    np.random.seed(seed)
+    # reproducibility
+    cudnn.deterministic = True
+

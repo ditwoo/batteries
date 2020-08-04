@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import Union, Mapping
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 
 class TensorboardLogger:
     def __init__(self, logdir: Union[str, Path]):
-        self.writer = SummaryWriter(log_dir=logdir)
+        self.writer = SummaryWriter(log_dir=logdir, max_queue=1)
 
     def __enter__(self):
         return self
@@ -13,7 +13,10 @@ class TensorboardLogger:
     def metric(
         self, plot_name: str, value: Union[float, Mapping[str, float]], iteration: int
     ) -> None:
-        self.writer.add_scalars(plot_name, value, iteration)
+        if isinstance(value, (int, float)):
+            self.writer.add_scalar(plot_name, value, iteration)
+        elif isinstance(value, dict):
+            self.writer.add_scalars(plot_name, value, iteration)
 
     def __exit__(self, ex_type, ex_value, ex_traceback):
         self.writer.close()
