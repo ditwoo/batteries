@@ -6,7 +6,7 @@
 
 1. seed everything
 
-2. create and initilize (probably load weights from checkpoint) model, optimizer, scheduler
+2. create and initialize (probably load weights from checkpoint) model (sync batch norm and other), optimizer, scheduler
 
 3. create datasets/dataloaders
 
@@ -22,6 +22,11 @@
 
 5. save the best score on validation set and compare it with score on leader board
 
+### Examples
+
+- [Training on specified device](examples/device)
+
+- [Distributed training](examples/dp)
 
 ### Tests
 
