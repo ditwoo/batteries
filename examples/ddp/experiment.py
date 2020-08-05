@@ -138,7 +138,9 @@ def experiment(rank, world_size, logdir: str):
     )
 
     seed_all()
-    model = SimpleNet().to(rank)
+    model = SimpleNet()
+    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = model.to(rank)
     model = nn.parallel.DistributedDataParallel(model, device_ids=[rank])
     optimizer = optim.AdamW(model.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss()
