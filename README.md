@@ -2,9 +2,9 @@
 
 ## Batteries
 
-<center>
-<img src="https://image.flaticon.com/icons/svg/3103/3103476.svg" height="20%" width="20%">
-</center>
+<p align="center">
+    <img src="https://image.flaticon.com/icons/svg/3103/3103476.svg" height="20%" width="20%">
+</p>
 
 ## Generalized experiment flow
 
