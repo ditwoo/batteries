@@ -186,10 +186,11 @@ class CheckpointManager:
             logdir (Union[str, Path]): directory where should be stored checkpoints
             checkpoint_names (str, optional): checkpoint file name.
                 Default checkpoint name is "exp".
-            metric (str, optional): metric name. Defaults to "loss".
+            metric (str, optional): metric name.
+                Default is "loss".
             metric_minimization (bool, optional): indicator to minimize metric,
                 if `True` then expected that target metric should decrease.
-                Defaults to True.
+                Default is True.
             save_n_best (int, optional): number of best checkpoints to keep.
                 Default is 1.
         """
