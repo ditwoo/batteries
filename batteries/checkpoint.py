@@ -89,7 +89,7 @@ def load_checkpoint(
             If `None` then will be ignored.
             Default is None.
     """
-    checkpoint = torch.load(checkpoint_file)
+    checkpoint = torch.load(str(checkpoint_file))
     loaded_items = []
 
     if "model_state_dict" in checkpoint and model is not None:
@@ -109,7 +109,9 @@ def load_checkpoint(
         loaded_items.append("scheduler")
 
     if loaded_items:
-        print("[+] Loaded {} from {}".format(", ".join(loaded_items), checkpoint_file))
+        print(
+            "[+] Loaded {} from '{}'".format(", ".join(loaded_items), checkpoint_file)
+        )
 
 
 def checkpoints_weight_average(*files) -> OrderedDict:
