@@ -40,7 +40,6 @@ def train_fn(
     prbar = tqdm(enumerate(loader), total=len(loader), file=sys.stdout, desc="train")
     for _idx, (bx, by) in prbar:
         bx, by = t2d((bx, by), device)
-        # by = t2d(by, device)
 
         optimizer.zero_grad()
 
