@@ -28,7 +28,9 @@ def make_checkpoint(
         "stage": stage,
         "epoch": epoch,
     }
-    if isinstance(model, torch.nn.DataParallel):
+    if isinstance(model, torch.nn.DataParallel) or isinstance(
+        model, torch.nn.parallel.DistributedDataParallel
+    ):
         checkpoint["model_state_dict"] = model.module.state_dict()
     else:
         checkpoint["model_state_dict"] = model.state_dict()
