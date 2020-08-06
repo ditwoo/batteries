@@ -20,6 +20,7 @@ from batteries import (
     TensorboardLogger,
     t2d,
     make_checkpoint,
+    load_checkpoint,
 )
 
 
@@ -133,10 +134,6 @@ def experiment(rank, world_size, logdir: str):
     setup(rank, world_size)
     tb_logdir = logdir / "tensorboard"
 
-    checkpointer = CheckpointManager(
-        logdir=logdir, metric="accuracy", metric_minimization=False, save_n_best=3
-    )
-
     seed_all()
     model = SimpleNet()
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -149,6 +146,73 @@ def experiment(rank, world_size, logdir: str):
 
     with TensorboardLogger(tb_logdir) as tb:
         stage = "stage0"
+
+        checkpointer = CheckpointManager(
+            logdir=logdir / stage,
+            metric="accuracy",
+            metric_minimization=False,
+            save_n_best=3,
+        )
+
+        for ep in range(1, 10 + 1):
+            if rank == 0:
+                print(f"Epoch {ep}:")
+            train_loss, train_acc = train_fn(
+                model, train_loader, rank, criterion, optimizer
+            )
+            valid_loss, valid_acc = valid_fn(model, valid_loader, rank, criterion)
+
+            if rank == 0:
+                # log metrics
+                tb.metric(
+                    f"{stage}/loss", {"train": train_loss, "valid": valid_loss}, ep
+                )
+                tb.metric(
+                    f"{stage}/accuracy", {"train": train_acc, "valid": valid_acc}, ep,
+                )
+
+                epoch_metrics = {
+                    "train_loss": train_loss,
+                    "train_accuracy": train_acc,
+                    "valid_loss": valid_loss,
+                    "valid_accuracy": valid_acc,
+                }
+
+                # store checkpoints
+                checkpointer.process(
+                    metric_value=valid_acc,
+                    epoch=ep,
+                    checkpoint=make_checkpoint(
+                        stage, ep, model, optimizer, metrics=epoch_metrics,
+                    ),
+                )
+
+                print(f"            train loss - {train_loss:.5f}")
+                print(f"train dataset accuracy - {train_acc:.5f}")
+                print(f"            valid loss - {valid_loss:.5f}")
+                print(f"valid dataset accuracy - {valid_acc:.5f}")
+                print()
+
+        # do a next training stage
+        stage = "stage1"
+        if rank == 0:
+            print(f"\n\nStage - {stage}")
+
+        dist.barrier()
+        model = SimpleNet()
+        load_checkpoint(logdir / "stage0" / "best.pth", model)
+        model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        model = model.to(rank)
+        model = nn.parallel.DistributedDataParallel(model, device_ids=[rank])
+        optimizer = optim.Adam(model.parameters(), lr=1e-4 / 2)
+
+        checkpointer = CheckpointManager(
+            logdir=logdir / stage,
+            metric="accuracy",
+            metric_minimization=False,
+            save_n_best=3,
+        )
+
         for ep in range(1, 10 + 1):
             if rank == 0:
                 print(f"Epoch {ep}:")
