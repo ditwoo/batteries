@@ -78,7 +78,7 @@ def load_checkpoint(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer = None,
     scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-    map_location: Union[torch.device, str, Mapping[int, str], Callable] = None,
+    map_location: Union[torch.device, str, Mapping[str, str], Callable] = None,
 ) -> None:
     """Shortcut for loading checkpoint state.
 
@@ -93,6 +93,7 @@ def load_checkpoint(
             Default is None.
         map_location (Union[torch.device, str, Mapping[int, str], Callable], optional):
             location to use for loading checkpoint content.
+            More about possible locations - https://pytorch.org/docs/master/generated/torch.load.html
             Default is None.
     """
     checkpoint = torch.load(str(checkpoint_file), map_location=map_location)
