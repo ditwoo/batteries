@@ -91,8 +91,8 @@ def load_checkpoint(
         scheduler (torch.optim.lr_scheduler._LRScheduler, optional): scheduler to initialize with checkpoint weights.
             If `None` then will be ignored.
             Default is None.
-        map_location (Union[torch.device, str, Mapping[int, str], Callable], optional): location
-            to use for loading checkpoint content.
+        map_location (Union[torch.device, str, Mapping[int, str], Callable], optional):
+            location to use for loading checkpoint content.
             Default is None.
     """
     checkpoint = torch.load(str(checkpoint_file), map_location=map_location)
