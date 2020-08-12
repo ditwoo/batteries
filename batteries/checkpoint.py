@@ -49,6 +49,7 @@ def save_checkpoint(
     name: str,
     is_best: bool = False,
     is_last: bool = False,
+    verbose: bool = False,
 ) -> None:
     """Save checkpoint to a file.
 
@@ -60,11 +61,14 @@ def save_checkpoint(
             Defaults to False.
         is_last (bool, optional): indicator to save checkpoint as last checkpoint.
             Defaults to False.
+        verbose (bool, optional): default is `False`.
     """
     os.makedirs(logdir, exist_ok=True)
     _name = name if name.endswith(".pth") else f"{name}.pth"
     filename = os.path.join(str(logdir), _name)
     torch.save(checkpoint, filename)
+    if verbose:
+        print(f"=> Saved checkpoint '{filename}'")
     if is_best:
         best_filename = os.path.join(str(logdir), "best.pth")
         shutil.copyfile(filename, best_filename)
@@ -116,9 +120,7 @@ def load_checkpoint(
         loaded_items.append("scheduler")
 
     if loaded_items:
-        print(
-            "[+] Loaded {} from '{}'".format(", ".join(loaded_items), checkpoint_file)
-        )
+        print("<= Loaded {} from '{}'".format(", ".join(loaded_items), checkpoint_file))
 
 
 def checkpoints_weight_average(*files) -> OrderedDict:
