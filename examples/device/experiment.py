@@ -20,6 +20,14 @@ from batteries import (
     make_checkpoint,
     load_checkpoint,
 )
+from batteries.progress import tqdm
+
+
+######################################################################
+# TODOs:
+# 1. save tensorboard metrics after each step (train/valid)
+# 2. typings and docs to each function
+######################################################################
 
 
 def train_fn(
@@ -30,41 +38,44 @@ def train_fn(
     optimizer,
     scheduler=None,
     accum_steps: int = 1,
-    verbose=True,
+    verbose: bool = True,
 ):
     model.train()
 
     losses = []
     dataset_true_lbl = []
     dataset_pred_lbl = []
-    prbar = tqdm(enumerate(loader), total=len(loader), file=sys.stdout, desc="train")
-    for _idx, (bx, by) in prbar:
-        bx, by = t2d((bx, by), device)
-        # by = t2d(by, device)
 
-        optimizer.zero_grad()
+    with tqdm(total=len(loader), desc="train", disable=not verbose) as progress:
+        for _idx, (bx, by) in enumerate(loader):
+            bx, by = t2d((bx, by), device)
+            # by = t2d(by, device)
 
-        if isinstance(bx, (tuple, list)):
-            outputs = model(*bx)
-        elif isinstance(bx, dict):
-            outputs = model(**bx)
-        else:
-            outputs = model(bx)
+            optimizer.zero_grad()
 
-        loss = loss_fn(outputs, by)
-        _loss = loss.item()
-        losses.append(_loss)
-        loss.backward()
+            if isinstance(bx, (tuple, list)):
+                outputs = model(*bx)
+            elif isinstance(bx, dict):
+                outputs = model(**bx)
+            else:
+                outputs = model(bx)
 
-        dataset_true_lbl.append(by.flatten().detach().cpu().numpy())
-        dataset_pred_lbl.append(outputs.argmax(1).flatten().detach().cpu().numpy())
+            loss = loss_fn(outputs, by)
+            _loss = loss.item()
+            losses.append(_loss)
+            loss.backward()
 
-        prbar.set_postfix_str(f"loss {_loss:.4f}")
+            dataset_true_lbl.append(by.flatten().detach().cpu().numpy())
+            dataset_pred_lbl.append(outputs.argmax(1).flatten().detach().cpu().numpy())
 
-        if (_idx + 1) % accum_steps == 0:
-            optimizer.step()
-            if scheduler is not None:
-                scheduler.step()
+            progress.set_postfix_str(f"loss {_loss:.4f}")
+
+            if (_idx + 1) % accum_steps == 0:
+                optimizer.step()
+                if scheduler is not None:
+                    scheduler.step()
+
+            progress.update(1)
 
     dataset_true_lbl = np.concatenate(dataset_true_lbl)
     dataset_pred_lbl = np.concatenate(dataset_pred_lbl)
@@ -73,17 +84,17 @@ def train_fn(
     return np.mean(losses), dataset_acc
 
 
-def valid_fn(model, loader, device, loss_fn):
+def valid_fn(model, loader, device, loss_fn, verbose: bool = True):
     model.eval()
 
     losses = []
     dataset_true_lbl = []
     dataset_pred_lbl = []
-    with torch.no_grad():
-        prbar = tqdm(loader, file=sys.stdout, desc="valid")
-        for bx, by in prbar:
+    with torch.no_grad(), tqdm(
+        total=len(loader), desc="valid", disable=not verbose
+    ) as progress:
+        for bx, by in loader:
             bx, by = t2d((bx, by), device)
-            # by = t2d(by, device)
 
             if isinstance(bx, (tuple, list)):
                 outputs = model(*bx)
@@ -95,10 +106,12 @@ def valid_fn(model, loader, device, loss_fn):
             loss = loss_fn(outputs, by).item()
             losses.append(loss)
 
-            prbar.set_postfix_str(f"loss {loss:.4f}")
+            progress.set_postfix_str(f"loss {loss:.4f}")
 
             dataset_true_lbl.append(by.flatten().detach().cpu().numpy())
             dataset_pred_lbl.append(outputs.argmax(1).flatten().detach().cpu().numpy())
+
+            progress.update(1)
 
     dataset_true_lbl = np.concatenate(dataset_true_lbl)
     dataset_pred_lbl = np.concatenate(dataset_pred_lbl)
@@ -119,6 +132,7 @@ def experiment(logdir: str, device: str):
 
     with TensorboardLogger(tb_logdir) as tb:
         stage = "stage0"
+        n_epochs = 10
 
         checkpointer = CheckpointManager(
             logdir=logdir / stage,
@@ -127,8 +141,8 @@ def experiment(logdir: str, device: str):
             save_n_best=3,
         )
 
-        for ep in range(1, 10 + 1):
-            print(f"[Epoch {ep}]")
+        for ep in range(1, n_epochs + 1):
+            print(f"[Epoch {ep}/{n_epochs}]")
             train_loss, train_acc = train_fn(
                 model, train_loader, device, criterion, optimizer
             )
@@ -165,6 +179,7 @@ def experiment(logdir: str, device: str):
 
         # do a next training stage
         stage = "stage1"
+        n_epochs = 10
         print(f"\n\nStage - {stage}")
 
         checkpointer = CheckpointManager(
@@ -177,8 +192,8 @@ def experiment(logdir: str, device: str):
         load_checkpoint(logdir / "stage0" / "best.pth", model)
         optimizer = optim.Adam(model.parameters(), lr=1e-4 / 2)
 
-        for ep in range(1, 10 + 1):
-            print(f"[Epoch {ep}]")
+        for ep in range(1, n_epochs + 1):
+            print(f"[Epoch {ep}/{n_epochs}]")
             train_loss, train_acc = train_fn(
                 model, train_loader, device, criterion, optimizer
             )
