@@ -3,7 +3,7 @@ import json
 import shutil
 from collections import OrderedDict
 from pathlib import Path
-from typing import Union, Mapping, Any
+from typing import Union, Mapping, Any, Callable
 
 import torch
 
@@ -78,6 +78,7 @@ def load_checkpoint(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer = None,
     scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+    map_location: Union[torch.device, str, Mapping[int, str], Callable] = None,
 ) -> None:
     """Shortcut for loading checkpoint state.
 
@@ -90,8 +91,11 @@ def load_checkpoint(
         scheduler (torch.optim.lr_scheduler._LRScheduler, optional): scheduler to initialize with checkpoint weights.
             If `None` then will be ignored.
             Default is None.
+        map_location (Union[torch.device, str, Mapping[int, str], Callable], optional): location
+            to use for loading checkpoint content.
+            Default is None.
     """
-    checkpoint = torch.load(str(checkpoint_file))
+    checkpoint = torch.load(str(checkpoint_file), map_location=map_location)
     loaded_items = []
 
     if "model_state_dict" in checkpoint and model is not None:
