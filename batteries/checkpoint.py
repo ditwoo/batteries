@@ -50,6 +50,7 @@ def save_checkpoint(
     is_best: bool = False,
     is_last: bool = False,
     verbose: bool = False,
+    save_fn: Callable = torch.save,
 ) -> None:
     """Save checkpoint to a file.
 
@@ -62,11 +63,12 @@ def save_checkpoint(
         is_last (bool, optional): indicator to save checkpoint as last checkpoint.
             Defaults to False.
         verbose (bool, optional): default is `False`.
+        save_fn (Callable, optional): default is `torch.save`
     """
     os.makedirs(logdir, exist_ok=True)
     _name = name if name.endswith(".pth") else f"{name}.pth"
     filename = os.path.join(str(logdir), _name)
-    torch.save(checkpoint, filename)
+    save_fn(checkpoint, filename)
     if verbose:
         print(f"=> Saved checkpoint '{filename}'")
     if is_best:
@@ -187,6 +189,7 @@ class CheckpointManager:
         metric: str = "loss",
         metric_minimization: bool = True,
         save_n_best: int = 1,
+        save_fn: Callable = torch.save,
     ):
         """
         Args:
@@ -200,6 +203,7 @@ class CheckpointManager:
                 Default is True.
             save_n_best (int, optional): number of best checkpoints to keep.
                 Default is 1.
+            save_fn (Callable, optional): default is `torch.save`
         """
         self.logdir = logdir
         self.checkpoint_filename = checkpoint_names
@@ -208,6 +212,7 @@ class CheckpointManager:
         self.save_n_best = save_n_best
         self.metrics = []
         self.best_metrics = []
+        self.save_fn = save_fn
 
     def _save_metrics(self) -> None:
         with open(os.path.join(self.logdir, "metrics.json"), "w") as f:
@@ -247,6 +252,7 @@ class CheckpointManager:
             name=checkpoint_name,
             is_best=is_best,
             is_last=True,
+            save_fn=self.save_fn,
         )
         # update metrics
         metric_record = {"epoch": epoch, self.metric_name: metric_value}
