@@ -29,14 +29,14 @@ class Mixup:
         self.mixup_alpha = mixup_alpha
         self.random_state = np.random.RandomState(random_seed)
 
-    def get_lambda(self, batch_size):
+    def get_lambda(self, batch_size: int) -> torch.tensor:
         """Get mixup random coefficients.
 
         Args:
-            batch_size: int
+            batch_size (int): number of elements in batch.
 
         Returns:
-            mixup_lambdas: (batch_size,)
+            torch.FloatTensor with mixup_lambdas with shape (batch_size,)
         """
         mixup_lambdas = []
         for _ in range(0, batch_size, 2):
