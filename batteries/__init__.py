@@ -11,3 +11,4 @@ from .utils import (
     t2d,
 )
 from .early_stop import EarlyStopIndicator
+from .mixup import Mixup, mixup_batch
