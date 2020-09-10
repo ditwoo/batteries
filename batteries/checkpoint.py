@@ -24,10 +24,7 @@ def make_checkpoint(
     Returns:
         dict: [description]
     """
-    checkpoint = {
-        "stage": stage,
-        "epoch": epoch,
-    }
+    checkpoint = {"stage": stage, "epoch": epoch}
     if isinstance(model, torch.nn.DataParallel) or isinstance(
         model, torch.nn.parallel.DistributedDataParallel
     ):
@@ -123,6 +120,10 @@ def load_checkpoint(
 
     if loaded_items:
         print("<= Loaded {} from '{}'".format(", ".join(loaded_items), checkpoint_file))
+
+        if "metrics" in checkpoint:
+            print("Checkpoint metrics:")
+            print(checkpoint["metrics"])
 
 
 def checkpoints_weight_average(*files) -> OrderedDict:
