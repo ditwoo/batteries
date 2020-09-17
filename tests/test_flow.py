@@ -1,3 +1,4 @@
+import sys
 import pytest
 import numpy as np
 
@@ -7,7 +8,9 @@ import torch.optim as optim
 from torch.utils.data import TensorDataset, Subset, DataLoader
 
 # local files
-from batteries import engine, seed_all
+from batteries import seed_all
+from batteries.progress import tqdm
+from batteries.utils import t2d
 
 
 IS_CUDA_PRESENT = torch.cuda.is_available()
@@ -15,6 +18,69 @@ if IS_CUDA_PRESENT:
     IS_MULTIPLE_CUDA_DEVICES = torch.cuda.device_count() > 1
 else:
     IS_MULTIPLE_CUDA_DEVICES = False
+
+
+def train_fn(
+    model: nn.Module,
+    loader,
+    device,
+    loss_fn,
+    optimizer,
+    scheduler=None,
+    accum_steps: int = 1,
+    verbose=True,
+):
+    model.train()
+
+    losses = []
+    prbar = tqdm(enumerate(loader), file=sys.stdout, desc="train")
+    for _idx, (bx, by) in prbar:
+        bx = t2d(bx, device)
+        by = t2d(by, device)
+
+        optimizer.zero_grad()
+
+        if isinstance(bx, (tuple, list)):
+            outputs = model(*bx)
+        elif isinstance(bx, dict):
+            outputs = model(**bx)
+        else:
+            outputs = model(bx)
+
+        loss = loss_fn(outputs, by)
+        losses.append(loss.item())
+        loss.backward()
+
+        prbar.set_postfix_str(f"loss {loss:.4f}")
+
+        if (_idx + 1) % accum_steps == 0:
+            optimizer.step()
+            if scheduler is not None:
+                scheduler.step()
+
+    return np.mean(losses)
+
+
+def valid_fn(model: nn.Module, loader, device, loss_fn):
+    model.eval()
+
+    losses = []
+    with torch.no_grad():
+        for bx, by in tqdm(loader, file=sys.stdout, desc="valid"):
+            bx = t2d(bx, device)
+            by = t2d(by, device)
+
+            if isinstance(bx, (tuple, list)):
+                outputs = model(*bx)
+            elif isinstance(bx, dict):
+                outputs = model(**bx)
+            else:
+                outputs = model(bx)
+
+            loss = loss_fn(outputs, by)
+            losses.append(loss.item())
+
+    return np.mean(losses)
 
 
 class Projector(nn.Module):
@@ -44,8 +110,8 @@ def test_train_fn_on_cpu():
     metrics = []
     n_epochs = 5
     for epoch_idx in range(n_epochs):
-        train_loss = engine.train_fn(model, train_loader, device, criterion, optimizer)
-        valid_loss = engine.valid_fn(model, valid_loader, device, criterion)
+        train_loss = train_fn(model, train_loader, device, criterion, optimizer)
+        valid_loss = valid_fn(model, valid_loader, device, criterion)
         metrics.append(
             {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
         )
@@ -92,8 +158,8 @@ def test_train_fn_on_cuda_0():
     metrics = []
     n_epochs = 5
     for epoch_idx in range(n_epochs):
-        train_loss = engine.train_fn(model, train_loader, device, criterion, optimizer)
-        valid_loss = engine.valid_fn(model, valid_loader, device, criterion)
+        train_loss = train_fn(model, train_loader, device, criterion, optimizer)
+        valid_loss = valid_fn(model, valid_loader, device, criterion)
         metrics.append(
             {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
         )
@@ -142,8 +208,8 @@ def test_train_fn_dp_cuda():
     metrics = []
     n_epochs = 5
     for epoch_idx in range(n_epochs):
-        train_loss = engine.train_fn(model, train_loader, device, criterion, optimizer)
-        valid_loss = engine.valid_fn(model, valid_loader, device, criterion)
+        train_loss = train_fn(model, train_loader, device, criterion, optimizer)
+        valid_loss = valid_fn(model, valid_loader, device, criterion)
         metrics.append(
             {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
         )
