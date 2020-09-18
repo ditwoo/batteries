@@ -24,12 +24,20 @@ def make_checkpoint(
     Returns:
         dict: [description]
     """
-    checkpoint = {"stage": stage, "epoch": epoch}
-    if isinstance(model, torch.nn.DataParallel) or isinstance(
-        model, torch.nn.parallel.DistributedDataParallel
+    if isinstance(
+        model, (torch.nn.DataParallel, torch.nn.parallel.DistributedDataParallel)
     ):
-        checkpoint["model_state_dict"] = model.module.state_dict()
-    else:
+        return make_checkpoint(stage, epoch, model.model, optimizer, scheduler, metrics)
+
+    if not isinstance(model, torch.nn.Module):
+        raise ValueError(
+            "Expected that model will be an instance of nn.Module but got {}!".format(
+                type(model)
+            )
+        )
+
+    checkpoint = {"stage": stage, "epoch": epoch}
+    if model is not None:
         checkpoint["model_state_dict"] = model.state_dict()
     if optimizer is not None:
         checkpoint["optimizer_state_dict"] = optimizer.state_dict()
@@ -275,6 +283,9 @@ class CheckpointManager:
             to_remove = os.path.join(
                 self.logdir, self.checkpoint_name(self.best_metrics.pop(-1)["epoch"])
             )
-            os.remove(to_remove)
+            try:
+                os.remove(to_remove)
+            except FileNotFoundError:
+                pass
         # overwrite existing metrics
         self._save_metrics()
