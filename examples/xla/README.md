@@ -1,1 +1,1 @@
-## [Example](examples/xla/xla_example.ipynb)
+## [Example](examples/xla/example.ipynb)
