@@ -136,7 +136,7 @@ def load_checkpoint(
             print("Epoch: {}".format(checkpoint["epoch"]))
 
         if "metrics" in checkpoint:
-            print("Checkpoint metrics:")
+            print("Metrics:")
             print(checkpoint["metrics"])
 
 
