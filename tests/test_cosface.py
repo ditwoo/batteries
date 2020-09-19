@@ -1,6 +1,7 @@
 import torch
+import torch.nn as nn
 import numpy as np
-from batteries.criterion import CosFaceLoss
+from batteries.layers import CosFace
 
 
 def test_cosface_loss():
@@ -15,8 +16,9 @@ def test_cosface_loss():
         [[0.1, 0.2, 0.3, 0.4], [1.1, 3.2, 5.3, 0.4], [0.1, 0.2, 6.3, 0.4],], dtype="f",
     )
 
-    loss_fn = CosFaceLoss(emb_size, n_classes, s, m, reduction="none")
-    loss_fn.projection.data = torch.from_numpy(projection)
+    layer = CosFace(emb_size, n_classes, s, m)
+    layer.projection.data = torch.from_numpy(projection)
+    loss_fn = nn.CrossEntropyLoss(reduction="none")
 
     def normalize(matr):
         return matr / np.sqrt((matr ** 2).sum(axis=1))[:, np.newaxis]  # for each row
@@ -40,24 +42,37 @@ def test_cosface_loss():
 
     expected_loss = cross_entropy(feats, mask, 1)
     actual = (
-        loss_fn(torch.from_numpy(features), torch.LongTensor(target)).detach().numpy()
+        loss_fn(
+            layer(torch.from_numpy(features), torch.LongTensor(target)),
+            torch.LongTensor(target),
+        )
+        .detach()
+        .numpy()
     )
     assert np.allclose(expected_loss, actual)
 
-    loss_fn = CosFaceLoss(emb_size, n_classes, s, m, reduction="mean")
-    loss_fn.projection.data = torch.from_numpy(projection)
+    loss_fn = nn.CrossEntropyLoss(reduction="mean")
 
     expected_loss = cross_entropy(feats, mask, 1)
     actual = (
-        loss_fn(torch.from_numpy(features), torch.LongTensor(target)).detach().numpy()
+        loss_fn(
+            layer(torch.from_numpy(features), torch.LongTensor(target)),
+            torch.LongTensor(target),
+        )
+        .detach()
+        .numpy()
     )
     assert np.isclose(expected_loss.mean(), actual)
 
-    loss_fn = CosFaceLoss(emb_size, n_classes, s, m, reduction="sum")
-    loss_fn.projection.data = torch.from_numpy(projection)
+    loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     expected_loss = cross_entropy(feats, mask, 1)
     actual = (
-        loss_fn(torch.from_numpy(features), torch.LongTensor(target)).detach().numpy()
+        loss_fn(
+            layer(torch.from_numpy(features), torch.LongTensor(target)),
+            torch.LongTensor(target),
+        )
+        .detach()
+        .numpy()
     )
     assert np.isclose(expected_loss.sum(), actual)
