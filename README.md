@@ -9,6 +9,13 @@
 ## Generalized experiment flow
 
 0. prepare environment, logdir, splits, datasets, augmentations (do a small research based on data).
+    
+    ```python
+    # speed ups
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    ```
+
 1. seed everything
 2. create and initialize (probably load weights from checkpoint) model (sync batch norm and other), optimizer, scheduler
 3. create datasets/dataloaders objects
