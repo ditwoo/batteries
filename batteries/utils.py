@@ -64,3 +64,17 @@ def seed_all(seed: int = 42) -> None:
     np.random.seed(seed)
     # reproducibility
     cudnn.deterministic = True
+    # small speedup
+    cudnn.benchmark = False
+
+
+def zero_grad(optimizer: torch.optim.Optimizer) -> None:
+    """Perform an hacky way to zero gradients.
+
+    Args:
+        optimizer (Optimizer): optimizer with model parameters.
+    """
+    for group in optimizer.param_groups:
+        for p in group["params"]:
+            p.grad = None
+

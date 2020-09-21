@@ -9,6 +9,7 @@ from .tensorboard import TensorboardLogger
 from .utils import (
     seed_all,
     t2d,
+    zero_grad,
 )
 from .early_stop import EarlyStopIndicator
 from .mixup import Mixup, mixup_batch
