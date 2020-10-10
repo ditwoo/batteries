@@ -19,9 +19,9 @@
 
 1. seed everything
 
-2. create and initialize (probably load weights from checkpoint) model, optimizer, scheduler
+2. create and initialize model, optimizer, scheduler
 
-    2.1. load weights from checkpoint/pretrain
+    2.1. load weights from checkpoint/pretrain or initialize (not randomly with fixed seed!)
 
     2.2. if [`DistributedDataParallel`](https://pytorch.org/docs/stable/notes/ddp.html) - turn on sync batch norm
 
