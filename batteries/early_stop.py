@@ -2,22 +2,25 @@ import operator
 
 
 class EarlyStopIndicator:
+    """Indicate if should be performed early
+    stoping based on metric values.
+
+    Args:
+        patience (int): number of events to wait.
+            Default is ``5``.
+        metric_minimization (bool): indicator to minimize metric,
+            if ``True`` then expected that target metric should decrease.
+            Default is ``True``.
+        minimum_change (float): minimum change in a metric.
+            Default is ``0.0``.
+    """
+
     def __init__(
         self,
         patience: int = 5,
         metric_minimization: bool = True,
         minimum_change: float = 0.0,
-    ):
-        """
-        Args:
-            patience (int): number of events to wait.
-                Default is 5.
-            metric_minimization (bool): indicator to minimize metric,
-                if `True` then expected that target metric should decrease.
-                Default is `True`.
-            minimum_change (float): minimum change in a metric.
-                Default is 0.0.
-        """
+    ):  # noqa: D107
         self.patience = patience
         self.minimum_change = minimum_change
         self.best_score = None
@@ -37,16 +40,6 @@ class EarlyStopIndicator:
         if self.best_score is None:
             self.best_score = metric
             return False
-
-        print(
-            ">>",
-            metric,
-            self.best_score,
-            self.counter,
-            self.patience,
-            f"diff: {self.best_score - metric}",
-            self.op(metric, self.best_score + self.minimum_change),
-        )
 
         if self.op(metric, self.best_score + self.minimum_change):
             self.counter += 1
