@@ -14,12 +14,15 @@ def make_checkpoint(
     """Generate checkpoint dict.
 
     Args:
-        stage ([type]): [description]
-        epoch ([type]): [description]
-        model ([type]): [description]
-        optimizer ([type], optional): [description]. Defaults to None.
-        scheduler ([type], optional): [description]. Defaults to None.
-        metrics ([type], optional): [description]. Defaults to None.
+        stage (str): stage name
+        epoch (int): epoch index
+        model (torch.nn.Module or torch.nn.DataParallel): model
+        optimizer (torch.optim.Optimizer): optimizer.
+            Default is ``None``.
+        scheduler (torch.optim.lr_scheduler._LRScheduler): scheduler.
+            Default is ``None``.
+        metrics (dict, optional): metrics to store in checkpoint.
+            Default is ``None``.
 
     Returns:
         dict: [description]
@@ -27,7 +30,9 @@ def make_checkpoint(
     if isinstance(
         model, (torch.nn.DataParallel, torch.nn.parallel.DistributedDataParallel)
     ):
-        return make_checkpoint(stage, epoch, model.model, optimizer, scheduler, metrics)
+        return make_checkpoint(
+            stage, epoch, model.module, optimizer, scheduler, metrics
+        )
 
     if not isinstance(model, torch.nn.Module):
         raise ValueError(
@@ -49,26 +54,26 @@ def make_checkpoint(
 
 
 def save_checkpoint(
-    checkpoint: Mapping[str, Any],
-    logdir: Union[str, Path],
-    name: str,
-    is_best: bool = False,
-    is_last: bool = False,
-    verbose: bool = False,
-    save_fn: Callable = torch.save,
+    checkpoint,
+    logdir,
+    name,
+    is_best=False,
+    is_last=False,
+    verbose=False,
+    save_fn=torch.save,
 ) -> None:
     """Save checkpoint to a file.
 
     Args:
-        checkpoint (Mapping[str, Any]): data to store in checkpoint
-        logdir (Union[str, Path]): directory where should be stored checkpoint
+        checkpoint (dict): data to store in checkpoint
+        logdir (str or Path): directory where should be stored checkpoint
         name (str): file name to use for storing checkpoint
         is_best (bool, optional): indicator to save checkpoint as best checkpoint.
             Defaults to False.
         is_last (bool, optional): indicator to save checkpoint as last checkpoint.
             Defaults to False.
         verbose (bool, optional): default is `False`.
-        save_fn (Callable, optional): default is `torch.save`
+        save_fn (function (callable), optional): default is `torch.save`
     """
     os.makedirs(logdir, exist_ok=True)
     _name = name if name.endswith(".pth") else f"{name}.pth"
@@ -85,16 +90,12 @@ def save_checkpoint(
 
 
 def load_checkpoint(
-    checkpoint_file: Union[str, Path],
-    model: torch.nn.Module,
-    optimizer: torch.optim.Optimizer = None,
-    scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-    map_location: Union[torch.device, str, Mapping[str, str], Callable] = None,
+    checkpoint_file, model, optimizer=None, scheduler=None, map_location=None,
 ) -> None:
     """Shortcut for loading checkpoint state.
 
     Args:
-        checkpoint_file (Union[str, Path]): path to checkpoint
+        checkpoint_file (str or Path): path to checkpoint
         model (torch.nn.Module): model to initialize with checkpoint weights
         optimizer (torch.optim.Optimizer, optional): optimizer to initialize with checkpoint weights.
             If `None` then will be ignored.
@@ -102,7 +103,7 @@ def load_checkpoint(
         scheduler (torch.optim.lr_scheduler._LRScheduler, optional): scheduler to initialize with checkpoint weights.
             If `None` then will be ignored.
             Default is None.
-        map_location (Union[torch.device, str, Mapping[int, str], Callable], optional):
+        map_location (torch.device or str or dict[str, int], optional):
             location to use for loading checkpoint content.
             More about possible locations - https://pytorch.org/docs/master/generated/torch.load.html
             Default is None.
@@ -197,29 +198,31 @@ def checkpoints_weight_average(*files) -> OrderedDict:
 
 
 class CheckpointManager:
+    """Manage saving top N best checkpoints based on metric.
+
+    Args:
+        logdir (str or Path): directory where should be stored checkpoints
+        checkpoint_names (str, optional): checkpoint file name.
+            Default checkpoint name is "exp".
+        metric (str, optional): metric name.
+            Default is "loss".
+        metric_minimization (bool, optional): indicator to minimize metric,
+            if `True` then expected that target metric should decrease.
+            Default is True.
+        save_n_best (int, optional): number of best checkpoints to keep.
+            Default is 1.
+        save_fn (function (callable), optional): default is `torch.save`
+    """
+
     def __init__(
         self,
-        logdir: Union[str, Path],
-        checkpoint_names: str = "exp",
-        metric: str = "loss",
-        metric_minimization: bool = True,
-        save_n_best: int = 1,
-        save_fn: Callable = torch.save,
-    ):
-        """
-        Args:
-            logdir (Union[str, Path]): directory where should be stored checkpoints
-            checkpoint_names (str, optional): checkpoint file name.
-                Default checkpoint name is "exp".
-            metric (str, optional): metric name.
-                Default is "loss".
-            metric_minimization (bool, optional): indicator to minimize metric,
-                if `True` then expected that target metric should decrease.
-                Default is True.
-            save_n_best (int, optional): number of best checkpoints to keep.
-                Default is 1.
-            save_fn (Callable, optional): default is `torch.save`
-        """
+        logdir,
+        checkpoint_names="exp",
+        metric="loss",
+        metric_minimization=True,
+        save_n_best=1,
+        save_fn=torch.save,
+    ):  # noqa: D107
         self.logdir = logdir
         self.checkpoint_filename = checkpoint_names
         self.metric_name = metric
@@ -233,18 +236,24 @@ class CheckpointManager:
         with open(os.path.join(self.logdir, "metrics.json"), "w") as f:
             json.dump(self.metrics, f, indent=4)
 
-    def checkpoint_name(self, epoch: int) -> str:
+    def checkpoint_name(self, epoch) -> str:
+        """Get checkpoint file name.
+
+        Args:
+            epoch (int): epoch number
+
+        Returns:
+            string with checkpoint name
+        """
         return f"{self.checkpoint_filename}_{epoch}.pth"
 
-    def process(
-        self, metric_value: float, epoch: int, checkpoint: Mapping[str, Any]
-    ) -> None:
+    def process(self, metric_value, epoch, checkpoint) -> None:
         """Generate checkpoint file and store only required checkpoints.
 
         Args:
             metric_value (float): value of a target metric
             epoch (int): epoch index
-            checkpoint (Mapping[str, Any]): data to store in a checkpoint file
+            checkpoint (dict[str, Any]): data to store in a checkpoint file
         """
         # determine arguments for save method
         if len(self.metrics):
