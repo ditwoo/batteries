@@ -12,16 +12,6 @@ class ArcFace(nn.Module):
     .. _ArcFace\: Additive Angular Margin Loss for Deep Face Recognition:
         https://arxiv.org/abs/1801.07698v1
 
-    Args:
-        in_features: size of each input sample.
-        out_features: size of each output sample.
-        s: norm of input feature.
-            Default: ``64.0``.
-        m: margin.
-            Default: ``0.5``.
-        eps: operation accuracy.
-            Default: ``1e-6``.
-
     Shape:
         - Input: :math:`(batch, H_{in})` where
           :math:`H_{in} = in\_features`.
@@ -39,7 +29,7 @@ class ArcFace(nn.Module):
 
     """
 
-    def __init__(  # noqa: D107
+    def __init__(
         self,
         in_features: int,
         out_features: int,
@@ -47,6 +37,17 @@ class ArcFace(nn.Module):
         m: float = 0.5,
         eps: float = 1e-6,
     ):
+        """
+        Args:
+            in_features: size of each input sample.
+            out_features: size of each output sample.
+            s: norm of input feature.
+                Default: ``64.0``.
+            m: margin.
+                Default: ``0.5``.
+            eps: operation accuracy.
+                Default: ``1e-6``.
+        """
         super(ArcFace, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -110,18 +111,6 @@ class SubCenterArcFace(nn.Module):
         by Large-scale Noisy Web Faces:
         https://ibug.doc.ic.ac.uk/media/uploads/documents/eccv_1445.pdf
 
-    Args:
-        in_features: size of each input sample.
-        out_features: size of each output sample.
-        s: norm of input feature,
-            Default: ``64.0``.
-        m: margin.
-            Default: ``0.5``.
-        k: number of possible class centroids.
-            Default: ``3``.
-        eps (float, optional): operation accuracy.
-            Default: ``1e-6``.
-
     Shape:
         - Input: :math:`(batch, H_{in})` where
           :math:`H_{in} = in\_features`.
@@ -139,7 +128,7 @@ class SubCenterArcFace(nn.Module):
 
     """
 
-    def __init__(  # noqa: D107
+    def __init__(
         self,
         in_features: int,
         out_features: int,
@@ -148,6 +137,20 @@ class SubCenterArcFace(nn.Module):
         k: int = 3,
         eps: float = 1e-6,
     ):
+        """
+        Args:
+            in_features: size of each input sample.
+            out_features: size of each output sample.
+            s: norm of input feature,
+                Default: ``64.0``.
+            m: margin.
+                Default: ``0.5``.
+            k: number of possible class centroids.
+                Default: ``3``.
+            eps (float, optional): operation accuracy.
+                Default: ``1e-6``.
+
+        """
         super(SubCenterArcFace, self).__init__()
         self.in_features = in_features
         self.out_features = out_features

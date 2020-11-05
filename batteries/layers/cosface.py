@@ -12,14 +12,6 @@ class CosFace(nn.Module):
     .. _CosFace\: Large Margin Cosine Loss for Deep Face Recognition:
         https://arxiv.org/abs/1801.09414
 
-    Args:
-        in_features: size of each input sample.
-        out_features: size of each output sample.
-        s: norm of input feature.
-            Default: ``64.0``.
-        m: margin.
-            Default: ``0.35``.
-
     Shape:
         - Input: :math:`(batch, H_{in})` where
           :math:`H_{in} = in\_features`.
@@ -37,9 +29,18 @@ class CosFace(nn.Module):
 
     """
 
-    def __init__(  # noqa: D107
+    def __init__(
         self, in_features: int, out_features: int, s: float = 64.0, m: float = 0.35,
     ):
+        """
+        Args:
+            in_features: size of each input sample.
+            out_features: size of each output sample.
+            s: norm of input feature.
+                Default: ``64.0``.
+            m: margin.
+                Default: ``0.35``.
+        """
         super(CosFace, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -97,15 +98,6 @@ class AdaCos(nn.Module):
         Effectively Learning Deep Face Representations:
         https://arxiv.org/abs/1905.00292
 
-    Args:
-        in_features: size of each input sample.
-        out_features: size of each output sample.
-        dynamical_s: option to use dynamical scale parameter.
-            If ``False`` then will be used initial scale.
-            Default: ``True``.
-        eps: operation accuracy.
-            Default: ``1e-6``.
-
     Shape:
         - Input: :math:`(batch, H_{in})` where
           :math:`H_{in} = in\_features`.
@@ -123,13 +115,23 @@ class AdaCos(nn.Module):
 
     """  # noqa: E501,W505
 
-    def __init__(  # noqa: D107
+    def __init__(
         self,
         in_features: int,
         out_features: int,
         dynamical_s: bool = True,
         eps: float = 1e-6,
     ):
+        """
+        Args:
+            in_features: size of each input sample.
+            out_features: size of each output sample.
+            dynamical_s: option to use dynamical scale parameter.
+                If ``False`` then will be used initial scale.
+                Default: ``True``.
+            eps: operation accuracy.
+                Default: ``1e-6``.
+        """
         super(AdaCos, self).__init__()
         self.in_features = in_features
         self.out_features = out_features

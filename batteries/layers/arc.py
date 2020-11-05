@@ -6,10 +6,6 @@ import torch.nn.functional as F
 class ArcMarginProduct(nn.Module):
     """Implementation of Arc Margin Product.
 
-    Args:
-        in_features: size of each input sample.
-        out_features: size of each output sample.
-
     Shape:
         - Input: :math:`(batch, H_{in})` where
           :math:`H_{in} = in\_features`.
@@ -27,7 +23,12 @@ class ArcMarginProduct(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, out_features: int):  # noqa: D107
+    def __init__(self, in_features: int, out_features: int):
+        """
+        Args:
+            in_features: size of each input sample.
+            out_features: size of each output sample.
+        """
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -70,10 +71,6 @@ class SoftMax(nn.Module):
         Distance Metric Learning-based Features:
         https://arxiv.org/abs/1712.10151
 
-    Args:
-        in_features: size of each input sample.
-        out_features: size of each output sample.
-
     Shape:
         - Input: :math:`(batch, H_{in})` where
           :math:`H_{in} = in\_features`.
@@ -91,7 +88,12 @@ class SoftMax(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, num_classes: int):  # noqa: D107
+    def __init__(self, in_features: int, num_classes: int):
+        """
+        Args:
+            in_features: size of each input sample.
+            out_features: size of each output sample.
+        """
         super(SoftMax, self).__init__()
         self.in_features = in_features
         self.out_features = num_classes
