@@ -3,11 +3,13 @@ import numpy as np
 from tempfile import TemporaryDirectory
 
 import torch
+import torch.nn as nn
 from batteries.checkpoint import (
     CheckpointManager,
     make_checkpoint,
     save_checkpoint,
     load_checkpoint,
+    average_model_state_dicts,
 )
 
 
@@ -176,4 +178,42 @@ def test_load_checkpoint():
     assert compare_state_dicts(
         optimizer.state_dict(), optimizer_from_checkpoint.state_dict()
     )
+
+
+def test_averate_model_state_dicts():
+    class TempModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.linear = nn.Linear(10, 6)
+            self.bn1d = nn.BatchNorm1d(6)
+            self.bn2d = nn.BatchNorm2d(6)
+            self.relu = nn.ReLU()
+
+    with TemporaryDirectory() as tmp_dir:
+        model1 = TempModel()
+        model2 = TempModel()
+
+        save_checkpoint(
+            make_checkpoint("stage", 1234, model1),
+            logdir=tmp_dir,
+            name="model1",
+            is_best=False,
+            is_last=False,
+        )
+
+        save_checkpoint(
+            make_checkpoint("stage", 1234, model2),
+            logdir=tmp_dir,
+            name="model2",
+            is_best=False,
+            is_last=True,
+        )
+
+        new_model = TempModel()
+        new_model.load_state_dict(
+            average_model_state_dicts(
+                os.path.join(tmp_dir, "model1.pth"),
+                os.path.join(tmp_dir, "model2.pth"),
+            )["model_state_dict"]
+        )
 

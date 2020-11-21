@@ -141,11 +141,11 @@ def load_checkpoint(
             print(checkpoint["metrics"])
 
 
-def checkpoints_weight_average(*files) -> OrderedDict:
+def average_model_state_dicts(*files) -> OrderedDict:
     """Loads checkpoints from inputs and returns a model with averaged weights.
 
     Args:
-        files: an iterable of string paths of checkpoints to load from.
+        files: path to checkpoint files (should be present 'model_state_dict').
 
     Returns:
         A dict of string keys mapping to various values. The 'model' key
@@ -167,6 +167,9 @@ def checkpoints_weight_average(*files) -> OrderedDict:
         # Copies over the settings from the first checkpoint
         if new_state is None:
             new_state = state
+
+        if "model_state_dict" not in state:
+            raise KeyError(f"Missing 'model_state_dict' in '{f}'!")
 
         model_params = state["model_state_dict"]
 
@@ -191,8 +194,10 @@ def checkpoints_weight_average(*files) -> OrderedDict:
 
     averaged_params = OrderedDict()
     for k, v in params_dict.items():
-        averaged_params[k] = v
-        averaged_params[k].div_(num_models)
+        if v.dtype in (torch.short, torch.int, torch.long):
+            averaged_params[k] = v // num_models
+        else:
+            averaged_params[k] = v / num_models
     new_state["model_state_dict"] = averaged_params
     return new_state
 

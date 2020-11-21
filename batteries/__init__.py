@@ -3,7 +3,7 @@ from .checkpoint import (
     make_checkpoint,
     save_checkpoint,
     load_checkpoint,
-    checkpoints_weight_average,
+    average_model_state_dicts,
 )
 from .tensorboard import TensorboardLogger
 from .utils import (
