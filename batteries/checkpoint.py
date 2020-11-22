@@ -1,9 +1,9 @@
-import os
 import json
+import os
 import shutil
 from collections import OrderedDict
 from pathlib import Path
-from typing import Union, Mapping, Any, Callable
+from typing import Any, Callable, Mapping, Union
 
 import torch
 
@@ -216,7 +216,9 @@ class CheckpointManager:
             Default is True.
         save_n_best (int, optional): number of best checkpoints to keep.
             Default is 1.
-        save_fn (function (callable), optional): default is `torch.save`
+        save_fn (function (callable), optional): model save function.
+            Default is `torch.save`.
+        metrics_file (str): file to use for storing metrics.
     """
 
     def __init__(
@@ -227,21 +229,45 @@ class CheckpointManager:
         metric_minimization=True,
         save_n_best=1,
         save_fn=torch.save,
+        metrics_file="metrics.json",
     ):  # noqa: D107
         self.logdir = logdir
         self.checkpoint_filename = checkpoint_names
         self.metric_name = metric
         self.metric_minimization = metric_minimization
         self.save_n_best = save_n_best
-        self.metrics = []
+        self.metrics = []  # list of dicts where 2 keys required - metric_name & 'epoch'
         self.best_metrics = []
         self.save_fn = save_fn
+        self.metrics_file = (
+            metrics_file if metrics_file.endswith(".json") else f"{metrics_file}.json"
+        )
+
+    def __repr__(self):
+        return (
+            "CheckpointManager("
+            f"logdir={self.logdir},"
+            f"checkpoint_names={self.checkpoint_filename},"
+            f"metric={self.metric_name},"
+            f"metric_minimization={self.metric_minimization},"
+            f"save_n_best={self.save_n_best},"
+            f"save_fn={self.save_fn},"
+            f"metrics_file={self.metrics_file}"
+            ")"
+        )
 
     def _save_metrics(self) -> None:
-        with open(os.path.join(self.logdir, "metrics.json"), "w") as f:
-            json.dump(self.metrics, f, indent=4)
+        """Store checkpoint information to a file."""
+        to_save = {
+            "metric_name": self.metric_name,
+            "metric_minimization": self.metric_minimization,
+            "values": self.metrics,
+        }
+        file_path = os.path.join(self.logdir, self.metrics_file)
+        with open(file_path, "w") as f:
+            json.dump(to_save, f, indent=4)
 
-    def checkpoint_name(self, epoch) -> str:
+    def _checkpoint_name(self, epoch) -> str:
         """Get checkpoint file name.
 
         Args:
@@ -252,15 +278,24 @@ class CheckpointManager:
         """
         return f"{self.checkpoint_filename}_{epoch}.pth"
 
-    def process(self, metric_value, epoch, checkpoint) -> None:
+    def process(self, score, epoch, checkpoint) -> None:
         """Generate checkpoint file and store only required checkpoints.
 
         Args:
-            metric_value (float): value of a target metric
+            score (float or Dict[str, float]): target metric value
+                or dict with metric_name key.
             epoch (int): epoch index
-            checkpoint (dict[str, Any]): data to store in a checkpoint file
+            checkpoint (Dict[str, Any]): data to store in a checkpoint file
         """
-        # determine arguments for save method
+        # unpack metric value
+        if isinstance(score, dict):
+            if not self.metric_name in score:
+                raise KeyError(f"There is no '{self.metric_name}' in {score}!")
+            _metric = score[self.metric_name]
+        else:
+            _metric = score
+
+        # collect arguments for save method
         if len(self.metrics):
             last_best_score = sorted(
                 self.metrics,
@@ -268,13 +303,14 @@ class CheckpointManager:
                 reverse=not self.metric_minimization,
             )[0][self.metric_name]
             if self.metric_minimization:
-                is_best = metric_value <= last_best_score
+                is_best = _metric <= last_best_score
             else:
-                is_best = metric_value >= last_best_score
+                is_best = _metric >= last_best_score
         else:
             is_best = True
+
         # store checkpoint
-        checkpoint_name = self.checkpoint_name(epoch)
+        checkpoint_name = self._checkpoint_name(epoch)
         save_checkpoint(
             checkpoint=checkpoint,
             logdir=self.logdir,
@@ -283,8 +319,12 @@ class CheckpointManager:
             is_last=True,
             save_fn=self.save_fn,
         )
+
         # update metrics
-        metric_record = {"epoch": epoch, self.metric_name: metric_value}
+        metric_record = dict(score) if isinstance(score, dict) else dict()
+        metric_record["epoch"] = epoch
+        metric_record[self.metric_name] = _metric
+
         self.metrics.append(metric_record)
         self.best_metrics.append(metric_record)
         # remove old not required checkpoint
@@ -295,11 +335,12 @@ class CheckpointManager:
                 reverse=not self.metric_minimization,
             )
             to_remove = os.path.join(
-                self.logdir, self.checkpoint_name(self.best_metrics.pop(-1)["epoch"])
+                self.logdir, self._checkpoint_name(self.best_metrics.pop(-1)["epoch"])
             )
             try:
                 os.remove(to_remove)
             except FileNotFoundError:
                 pass
+
         # overwrite existing metrics
         self._save_metrics()

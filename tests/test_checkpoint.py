@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 from tempfile import TemporaryDirectory
 
@@ -31,6 +32,7 @@ def test_checkpoint_manager_metric_maximization():
     minimize = False
     metric_name = "accuracy"
     file_prefix = "experiment"
+    metric_file = "m.json"
     metrics = np.random.uniform(size=100)
 
     best_metric_epochs = np.argsort(metrics)
@@ -40,7 +42,7 @@ def test_checkpoint_manager_metric_maximization():
     best_metrics = metrics[best_metric_epochs]
     best_metric_epochs += 1
 
-    expected_files = ["metrics.json", "last.pth", "best.pth"] + [
+    expected_files = [metric_file, "last.pth", "best.pth"] + [
         f"experiment_{epoch}.pth" for epoch in best_metric_epochs
     ]
 
@@ -51,10 +53,11 @@ def test_checkpoint_manager_metric_maximization():
             metric=metric_name,
             metric_minimization=minimize,
             save_n_best=n_best,
+            metrics_file=metric_file,
         )
         for epoch, metric in enumerate(metrics, start=1):
             checkpointer.process(
-                metric_value=metric,
+                score=metric,
                 epoch=epoch,
                 checkpoint={"epoch": int(epoch), metric_name: float(metric)},
             )
@@ -69,6 +72,55 @@ def test_checkpoint_manager_metric_maximization():
             assert all(k in content for k in ("epoch", metric_name))
             assert content["epoch"] == epoch
             assert content[metric_name] == metric
+
+        with open(os.path.join(tmp_dir, metric_file), "r") as in_file:
+            metric_file_content = json.load(in_file)
+
+        assert metric_file_content["metric_name"] == metric_name
+        assert metric_file_content["metric_minimization"] == minimize
+        assert metric_file_content["values"] == [
+            {"epoch": e, metric_name: m} for e, m in enumerate(metrics, 1)
+        ]
+
+    with TemporaryDirectory() as tmp_dir:
+        checkpointer = CheckpointManager(
+            logdir=tmp_dir,
+            checkpoint_names=file_prefix,
+            metric=metric_name,
+            metric_minimization=minimize,
+            save_n_best=n_best,
+            metrics_file=metric_file,
+        )
+        random_nums = []
+        for epoch, metric in enumerate(metrics, start=1):
+            rn = np.random.randint(0, 100)
+            checkpointer.process(
+                score={metric_name: metric, "random_number": rn},
+                epoch=epoch,
+                checkpoint={"epoch": int(epoch), metric_name: float(metric)},
+            )
+            random_nums.append(rn)
+
+        directory_files = os.listdir(tmp_dir)
+        assert len(directory_files) == len(expected_files)
+        for file in expected_files:
+            assert file in directory_files
+
+        for epoch, metric in zip(best_metric_epochs, best_metrics):
+            content = torch.load(os.path.join(tmp_dir, f"experiment_{epoch}.pth"))
+            assert all(k in content for k in ("epoch", metric_name))
+            assert content["epoch"] == epoch
+            assert content[metric_name] == metric
+
+        with open(os.path.join(tmp_dir, metric_file), "r") as in_file:
+            metric_file_content = json.load(in_file)
+
+        assert metric_file_content["metric_name"] == metric_name
+        assert metric_file_content["metric_minimization"] == minimize
+        assert metric_file_content["values"] == [
+            {"epoch": e, metric_name: m, "random_number": r}
+            for e, (m, r) in enumerate(zip(metrics, random_nums), 1)
+        ]
 
 
 def test_checkpoint_manager_metric_minimization():
@@ -99,7 +151,7 @@ def test_checkpoint_manager_metric_minimization():
         )
         for epoch, metric in enumerate(metrics, start=1):
             checkpointer.process(
-                metric_value=metric,
+                score=metric,
                 epoch=epoch,
                 checkpoint={"epoch": int(epoch), metric_name: float(metric)},
             )
