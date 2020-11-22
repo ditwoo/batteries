@@ -162,7 +162,7 @@ def experiment(logdir: str, device: str):
 
             # store checkpoints
             checkpointer.process(
-                metric_value=valid_acc,
+                score=valid_acc,
                 epoch=ep,
                 checkpoint=make_checkpoint(
                     stage, ep, model, optimizer, metrics=epoch_metrics,
@@ -213,7 +213,7 @@ def experiment(logdir: str, device: str):
 
             # store checkpoints
             checkpointer.process(
-                metric_value=valid_acc,
+                score=valid_acc,
                 epoch=ep,
                 checkpoint=make_checkpoint(
                     stage, ep, model, optimizer, metrics=epoch_metrics,
