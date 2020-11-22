@@ -15,7 +15,17 @@
     torch.autograd.set_detect_anomaly(False)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    # if you have issues with data loader workers
+    # (too much opened files)
+    torch.multiprocessing.set_sharing_strategy("file_system")
     ```
+
+    the most simple way to disable warnings:
+
+    ```bash
+    PYTHONWARNINGS='ignore' python3 my_file.py
+    ```
+
 
 1. seed everything
 
