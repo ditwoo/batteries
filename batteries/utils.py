@@ -1,9 +1,9 @@
 import random
-from typing import Mapping, Union, Sequence
+from typing import Mapping, Sequence, Union
 
-from packaging.version import parse, Version
 import numpy as np
 import torch
+from packaging.version import Version, parse
 from torch.backends import cudnn
 
 
@@ -77,4 +77,3 @@ def zero_grad(optimizer: torch.optim.Optimizer) -> None:
     for group in optimizer.param_groups:
         for p in group["params"]:
             p.grad = None
-
