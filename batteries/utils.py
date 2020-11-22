@@ -7,20 +7,17 @@ from packaging.version import Version, parse
 from torch.backends import cudnn
 
 
-def t2d(
-    tensor: Union[torch.Tensor, Mapping[str, torch.Tensor], Sequence[torch.Tensor]],
-    device: Union[str, torch.device],
-) -> Union[torch.Tensor, Mapping[str, torch.Tensor], Sequence[torch.Tensor]]:
+def t2d(tensor, device):
     """Move tensors to a specified device.
 
     Args:
-        tensor (Union[torch.Tensor, Mapping[str, torch.Tensor], Sequence[torch.Tensor]]):
+        tensor (torch.Tensor or Dict[str, torch.Tensor] or list/tuple of torch.Tensor):
             data to move to a device.
-        device (Union[str, torch.device]): device where should be moved device
+        device (str or torch.device): device where should be moved device
 
     Returns:
-        Union[torch.Tensor, Mapping[str, torch.Tensor], Sequence[torch.Tensor]]:
-            data moved to a specified device
+        torch.Tensor or Dict[str, torch.Tensor] or list/tuple of torch.Tensor
+        based on `tensor` type with data moved to a specified device
     """
     if isinstance(tensor, torch.Tensor):
         return tensor.to(device)
@@ -34,11 +31,12 @@ def t2d(
         return res
 
 
-def seed_all(seed: int = 42) -> None:
+def seed_all(seed=42) -> None:
     """Fix all seeds so results can be reproducible.
 
     Args:
-        seed (int): random seed
+        seed (int): random seed.
+            Default is 42.
     """
     try:
         import torch
@@ -68,11 +66,11 @@ def seed_all(seed: int = 42) -> None:
     cudnn.benchmark = False
 
 
-def zero_grad(optimizer: torch.optim.Optimizer) -> None:
+def zero_grad(optimizer) -> None:
     """Perform an hacky way to zero gradients.
 
     Args:
-        optimizer (Optimizer): optimizer with model parameters.
+        optimizer (torch.optim.Optimizer): optimizer with model parameters.
     """
     for group in optimizer.param_groups:
         for p in group["params"]:
