@@ -1,7 +1,7 @@
 import sys
 from functools import partial
-from tqdm import tqdm
 
+from tqdm import tqdm
 
 tqdm = partial(
     tqdm,
