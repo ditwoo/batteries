@@ -1,5 +1,4 @@
 import pickle
-import numpy as np
 import torch
 from torch import distributed as dist
 
@@ -38,7 +37,7 @@ def mreduce(tensor, num):
 def all_gather(data):
     """Run all_gather on arbitrary picklable data (not necessarily tensors).
 
-    NOTE: if data on different devices then data in resulted list will 
+    NOTE: if data on different devices then data in resulted list will
         be on the same devices.
 
     Source: https://github.com/facebookresearch/detr/blob/master/util/misc.py#L88-L128

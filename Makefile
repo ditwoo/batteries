@@ -8,12 +8,8 @@ codestyle:
 	black --check batteries
 	# python code quality check
 	flake8 \
-		--count \
 		--max-line-length 120 \
-		--docstring-convention google \
-		--ignore=Q000,D100,D205,D212,D415,W605 \
-		--show-source \
-		--statistics \
+		--ignore=Q000,D100,D205,D212,D400,D415,W605 \
 		batteries
 
 clear:

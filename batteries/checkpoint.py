@@ -140,7 +140,7 @@ def load_checkpoint(
 
 
 def average_model_state_dicts(*files) -> OrderedDict:
-    """Loads checkpoints from inputs and returns a model with averaged weights.
+    """Compute average model state from files.
 
     Args:
         files: path to checkpoint files (should be present 'model_state_dict').
