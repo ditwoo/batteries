@@ -6,7 +6,8 @@ import torch.nn.functional as F
 
 
 class CosFace(nn.Module):
-    r"""Implementation of `CosFace\: Large Margin Cosine Loss for Deep Face Recognition`_.
+    r"""Implementation of
+    `CosFace\: Large Margin Cosine Loss for Deep Face Recognition`_.
 
     .. _CosFace\: Large Margin Cosine Loss for Deep Face Recognition:
         https://arxiv.org/abs/1801.09414
