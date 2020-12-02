@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="batteries",
-    version="0.0.1",
+    version="0.0.2",
     description="Batteries for pytorch experiments.",
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
