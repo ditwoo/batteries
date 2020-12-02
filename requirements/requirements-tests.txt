@@ -5,4 +5,5 @@ tensorboard>=1.14.0
 packaging
 scikit-learn
 flake8
+black
 pytest

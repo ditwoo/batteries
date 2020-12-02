@@ -1,3 +1,4 @@
+# flake8: noqa
 from .torch import (
     classification_accuracy,
     binary_precision,

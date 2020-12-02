@@ -2,8 +2,6 @@ import json
 import os
 import shutil
 from collections import OrderedDict
-from pathlib import Path
-from typing import Any, Callable, Mapping, Union
 
 import torch
 
@@ -90,24 +88,24 @@ def save_checkpoint(
 
 
 def load_checkpoint(
-    checkpoint_file, model, optimizer=None, scheduler=None, map_location=None,
-) -> None:
+    checkpoint_file, model, optimizer=None, scheduler=None, map_location=None
+):
     """Shortcut for loading checkpoint state.
 
     Args:
-        checkpoint_file (str or Path): path to checkpoint
+        checkpoint_file (str or Path): path to checkpoint.
         model (torch.nn.Module): model to initialize with checkpoint weights
-        optimizer (torch.optim.Optimizer, optional): optimizer to initialize with checkpoint weights.
+        optimizer (torch.optim.Optimizer): optimizer to initialize with checkpoint weights.
             If `None` then will be ignored.
-            Default is None.
-        scheduler (torch.optim.lr_scheduler._LRScheduler, optional): scheduler to initialize with checkpoint weights.
+            Default is `None`.
+        scheduler (torch.optim.lr_scheduler._LRScheduler): scheduler to initialize with checkpoint weights.
             If `None` then will be ignored.
-            Default is None.
-        map_location (torch.device or str or dict[str, int], optional):
+            Default is `None`.
+        map_location (torch.device or str or dict[str, int]):
             location to use for loading checkpoint content.
-            More about possible locations - https://pytorch.org/docs/master/generated/torch.load.html
+            More about possible locations - `https://pytorch.org/docs/master/generated/torch.load.html`
             Default is None.
-    """
+    """  # noqa: D417
     checkpoint = torch.load(str(checkpoint_file), map_location=map_location)
     loaded_items = []
 
@@ -243,7 +241,7 @@ class CheckpointManager:
             metrics_file if metrics_file.endswith(".json") else f"{metrics_file}.json"
         )
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return (
             "CheckpointManager("
             f"logdir={self.logdir},"
@@ -289,7 +287,7 @@ class CheckpointManager:
         """
         # unpack metric value
         if isinstance(score, dict):
-            if not self.metric_name in score:
+            if self.metric_name not in score:
                 raise KeyError(f"There is no '{self.metric_name}' in {score}!")
             _metric = score[self.metric_name]
         else:
@@ -321,7 +319,7 @@ class CheckpointManager:
         )
 
         # update metrics
-        metric_record = dict(score) if isinstance(score, dict) else dict()
+        metric_record = dict(score) if isinstance(score, dict) else {}
         metric_record["epoch"] = epoch
         metric_record[self.metric_name] = _metric
 

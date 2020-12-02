@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class ArcMarginProduct(nn.Module):
-    """Implementation of Arc Margin Product.
+    r"""Implementation of Arc Margin Product.
 
     Shape:
         - Input: :math:`(batch, H_{in})` where
@@ -63,7 +63,7 @@ class ArcMarginProduct(nn.Module):
 
 
 class SoftMax(nn.Module):
-    """Implementation of
+    r"""Implementation of
     `Significance of Softmax-based Features in Comparison to
     Distance Metric Learning-based Features`_.
 

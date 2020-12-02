@@ -23,12 +23,19 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements/requirements-tests.txt ]; then pip install -r requirements/requirements-tests.txt; fi
 
-      - name: Lint with flake8
+      - name: Codestyle
         run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          # general check
+          black --check batteries
+          # python code quality check
+          flake8 \
+            --count \
+            --max-line-length 120 \
+            --docstring-convention google \
+            --ignore=Q000,D100,D205,D212,D415,W605 \
+            --show-source \
+            --statistics \
+            batteries
 
       - name: Run tests
         run: |

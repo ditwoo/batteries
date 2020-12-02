@@ -3,8 +3,7 @@ import torch
 
 
 def mixup_batch(batch: torch.tensor, alphas: torch.tensor) -> torch.tensor:
-    """
-    Mixup batch of even indexes (0, 2, 4, ...) with batch of odd indexes (1, 3, 5, ...).
+    """Mixup batch of even indexes (0, 2, 4, ...) with batch of odd indexes (1, 3, 5, ...).
 
     Args:
         batch (torch.tensor): batch of data to mixup,
@@ -17,7 +16,7 @@ def mixup_batch(batch: torch.tensor, alphas: torch.tensor) -> torch.tensor:
     """
     out = (
         batch[0::2].transpose(0, -1) * alphas[0::2]
-        + batch[1::2].transpose(0, -1) * alphas[1::2]
+        + batch[1::2].transpose(0, -1) * alphas[1::2]  # noqa: W503
     ).transpose(0, -1)
     return out
 
@@ -25,7 +24,7 @@ def mixup_batch(batch: torch.tensor, alphas: torch.tensor) -> torch.tensor:
 class Mixup:
     """Mixup coefficient generator."""
 
-    def __init__(self, mixup_alpha: float, random_seed: int = 1234):
+    def __init__(self, mixup_alpha: float, random_seed: int = 1234):  # noqa: D107
         self.mixup_alpha = mixup_alpha
         self.random_state = np.random.RandomState(random_seed)
 

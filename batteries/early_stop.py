@@ -2,8 +2,7 @@ import operator
 
 
 class EarlyStopIndicator:
-    """Indicate if should be performed early
-    stoping based on metric values.
+    """Indicate if should be performed early stoping based on metric values.
 
     Args:
         patience (int): number of events to wait.

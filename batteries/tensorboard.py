@@ -1,6 +1,3 @@
-from pathlib import Path
-from typing import Mapping, Union
-
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -14,7 +11,7 @@ class TensorboardLogger:
     def __init__(self, logdir):  # noqa: D107
         self.writer = SummaryWriter(log_dir=logdir, max_queue=1)
 
-    def __enter__(self):
+    def __enter__(self):  # noqa: D105
         return self
 
     def metric(self, name, value, iteration):
@@ -43,7 +40,7 @@ class TensorboardLogger:
         """
         self.writer.add_images(name, value, iteration)
 
-    def __exit__(self, ex_type, ex_value, ex_traceback):
+    def __exit__(self, ex_type, ex_value, ex_traceback):  # noqa: D105
         self.writer.close()
 
 
