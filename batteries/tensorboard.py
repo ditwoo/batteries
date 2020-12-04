@@ -1,7 +1,7 @@
 from tensorboardX import SummaryWriter
 
 
-class TensorboardLogger(SummaryWriter):
+class TensorboardLogger(SummaryWriter):  # noqa: D101
     def add_metric(self, tag, value, global_step=None, walltime=None):
         """Generalized method for `add_scalar` and `add_scalars`.
         If value is a dict with metrics (where key is metric value and value is a metric value)
