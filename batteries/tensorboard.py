@@ -1,47 +1,25 @@
-from torch.utils.tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
 
 
-class TensorboardLogger:
-    """Tensorboard wrapper.
-
-    Args:
-        logdir (str or pathlib.Path): directory where should be stored logs.
-    """
-
-    def __init__(self, logdir):  # noqa: D107
-        self.writer = SummaryWriter(log_dir=logdir, max_queue=1)
-
-    def __enter__(self):  # noqa: D105
-        return self
-
-    def metric(self, name, value, iteration):
-        """Write metric using tensorboard writer.
+class TensorboardLogger(SummaryWriter):
+    def add_metric(self, tag, value, global_step=None, walltime=None):
+        """Generalized method for `add_scalar` and `add_scalars`.
+        If value is a dict with metrics (where key is metric value and value is a metric value)
+        then will be called `add_scalars` othervise will be called `add_scalar`.
 
         Args:
-            name (str): name to use for metric values
-            value (float or Dict[str, float]): metic to store,
+            tag (str): name to use for metric values
+            value (float or Dict[str, float/int]): metic to store,
                 if passed dict with metics then they will be
                 stored with name prefix.
-            iteration (int): iteration number (batch/epoch index or similar)
+            global_step (int): Global step value to record
+            walltime (float): Optional override default walltime (time.time())
+                with seconds after epoch of event
         """
-        if isinstance(value, (int, float)):
-            self.writer.add_scalar(name, value, iteration)
-        elif isinstance(value, dict):
-            self.writer.add_scalars(name, value, iteration)
-
-    def images(self, name, value, iteration):
-        """Write images using tensorboard writer.
-
-        Args:
-            name (str): name to use for images
-            value (np.ndarray or torch.tensor): tensor with images,
-                should have shapes - (B)x(C)x(H)x(W)
-            iteration (int): iteration number (batch/epoch index or similar)
-        """
-        self.writer.add_images(name, value, iteration)
-
-    def __exit__(self, ex_type, ex_value, ex_traceback):  # noqa: D105
-        self.writer.close()
+        if isinstance(value, dict):
+            self.add_scalars(tag, value, global_step, walltime)
+        else:
+            self.add_scalar(tag, value, global_step, walltime)
 
 
 if __name__ == "__main__":
@@ -55,7 +33,7 @@ if __name__ == "__main__":
     with TensorboardLogger(logdir) as logger:
         x = np.arange(0, 10, step=0.001)
         for idx, _x in enumerate(x, start=1):
-            logger.metric("y=x**2", {"x": _x, "y": _x ** 2}, idx)
+            logger.add_metric("y=x**2", {"x": _x, "y": _x ** 2}, idx)
 
         for idx, _x in enumerate(x[::10], start=1):
-            logger.metric("y=x**3", {"x": _x, "y": _x ** 3}, idx)
+            logger.add_metric("y=x**3", {"x": _x, "y": _x ** 3}, idx)
