@@ -62,6 +62,8 @@
 - [Data Parallel training](examples/dp) (multiple stages)
 - [Distributed Data Parallel training](examples/ddp)
 
+Good example of training script - [pytorch-image-models](https://github.com/rwightman/pytorch-image-models/blob/master/train.py)
+
 ### Tests
 
 ```bash
