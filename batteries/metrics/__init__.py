@@ -5,3 +5,4 @@ from .torch import (
     binary_recall,
     binary_fbeta,
 )
+from .utils import AverageMetter

@@ -14,3 +14,4 @@ from .utils import (
 )
 from .early_stop import EarlyStopIndicator
 from .mixup import Mixup, mixup_batch
+from .metrics import AverageMetter

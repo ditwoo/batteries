@@ -88,7 +88,12 @@ def save_checkpoint(
 
 
 def load_checkpoint(
-    checkpoint_file, model, optimizer=None, scheduler=None, map_location=None
+    checkpoint_file,
+    model,
+    optimizer=None,
+    scheduler=None,
+    map_location=None,
+    verbose=True,
 ):
     """Shortcut for loading checkpoint state.
 
@@ -104,7 +109,9 @@ def load_checkpoint(
         map_location (torch.device or str or dict[str, int]):
             location to use for loading checkpoint content.
             More about possible locations - `https://pytorch.org/docs/master/generated/torch.load.html`
-            Default is None.
+            Default is `None`.
+        verbose (bool): verbosity mode, if `True` then will print a loaded items.
+            Default is `True`.
     """  # noqa: D417
     checkpoint = torch.load(str(checkpoint_file), map_location=map_location)
     loaded_items = []
@@ -125,7 +132,7 @@ def load_checkpoint(
         scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         loaded_items.append("scheduler")
 
-    if loaded_items:
+    if loaded_items and verbose:
         print("<= Loaded {} from '{}'".format(", ".join(loaded_items), checkpoint_file))
 
         if "stage" in checkpoint:
