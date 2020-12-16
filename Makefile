@@ -16,4 +16,9 @@ clear:
 	rm -rf .pytest_cache
 	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
+
+ddp-example:
+	PYTHONPATH=. python examples/ddp/experiment.py
+
+
 FORCE:

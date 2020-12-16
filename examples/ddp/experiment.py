@@ -1,286 +1,400 @@
 import os
-import sys
 import shutil
 from pathlib import Path
-import numpy as np
 
+import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
 import torch.distributed as dist
 import torch.multiprocessing as mp
+import torch.nn as nn
+import torch.optim as optim
+from batteries import (
+    AverageMetter,
+    CheckpointManager,
+    TensorboardLogger,
+    load_checkpoint,
+    make_checkpoint,
+    seed_all,
+    t2d,
+)
+from batteries.distributed import all_gather, mreduce
+from batteries.progress import tqdm
 
 from datasets import get_loaders
 from models import SimpleNet
 
-from batteries import (
-    seed_all,
-    CheckpointManager,
-    TensorboardLogger,
-    t2d,
-    make_checkpoint,
-    load_checkpoint,
-)
-from batteries.progress import tqdm
 
-
-######################################################################
-# TODOs:
-# 1. save tensorboard metrics after each step (train/valid)
-# 2. typings and docs to each function
-######################################################################
+torch.backends.cudnn.benchmark = True
 
 
 def setup(rank, world_size):
+    """Initialize distributed experiment.
+
+    Args:
+        rank (int): process rank
+        world_size (int): total number of processes
+    """
     os.environ["MASTER_ADDR"] = "localhost"
-    os.environ["MASTER_PORT"] = "12355"
+    os.environ["MASTER_PORT"] = "12346"
 
     # initialize the process group
     dist.init_process_group("gloo", rank=rank, world_size=world_size)
 
 
 def cleanup():
+    """Close distributed experiment."""
     dist.destroy_process_group()
 
 
 def train_fn(
     model,
     loader,
-    device,
+    world_setup,
     loss_fn,
     optimizer,
     scheduler=None,
-    accum_steps: int = 1,
-    verbose: bool = True,
+    accum_steps=1,
+    tb_logger=None,
+    last_iteration_index=None,
 ):
+    """One training epoch.
+
+    Args:
+        model (torcn.nn.Module): model to train
+        loader (torch.utils.data.Dataloader): loader to use for training
+        world_setup (tuple): (rank, world size)
+        loss_fn (torch.nn.Module or callable): loss function
+        optimizer (torch.optim.Optimizer): model optimizer
+        scheduler (): batch scheduler.
+            Default is `None`.
+        accum_steps (int): number of steps to accumulate gradients.
+            Default is `1`.
+        tb_logger (batteries.TensorboardLogger or tensorboardx.SummaryWriter):
+            writer for storing batch values.
+            Default is `None`.
+        last_iteration_index (int): index of last iteration (used with `tb_logger`).
+            Default is `None`.
+
+    Returns:
+        dict with training metrics (key - str, value - float)
+    """
     model.train()
 
-    verbose_on_device = verbose and device == 0
+    local_rank, world_size = world_setup
+    verbose = local_rank == 0
+    last_iteration_index = last_iteration_index or 0
 
-    losses = []
-    dataset_true_lbl = []
-    dataset_pred_lbl = []
+    num_batches = len(loader)
 
-    to_iter = enumerate(loader)
+    metrics = {"loss": AverageMetter(), "predicted": [], "true": []}
 
-    with tqdm(
-        total=len(loader), desc="train", disable=not verbose_on_device
-    ) as progress:
-        for _idx, (bx, by) in enumerate(loader):
-            bx, by = t2d((bx, by), device)
+    for _idx, (inputs, targets) in enumerate(loader):
+        inputs, targets = t2d((inputs, targets), "cuda")  # move to default CUDA device
 
-            optimizer.zero_grad()
+        if isinstance(inputs, (tuple, list)):
+            outputs = model(*inputs)
+        elif isinstance(inputs, dict):
+            outputs = model(**inputs)
+        else:
+            outputs = model(inputs)
 
-            if isinstance(bx, (tuple, list)):
-                outputs = model(*bx)
-            elif isinstance(bx, dict):
-                outputs = model(**bx)
-            else:
-                outputs = model(bx)
+        loss = loss_fn(outputs, targets)
 
-            loss = loss_fn(outputs, by)
-            _loss = loss.item()
-            losses.append(_loss)
-            loss.backward()
+        metrics["predicted"].append(targets.flatten().detach().cpu().numpy())
+        metrics["true"].append(outputs.argmax(1).flatten().detach().cpu().numpy())
 
-            dataset_true_lbl.append(by.flatten().detach().cpu().numpy())
-            dataset_pred_lbl.append(outputs.argmax(1).flatten().detach().cpu().numpy())
+        optimizer.zero_grad()
+        loss.backward()
 
-            if verbose_on_device:
-                progress.set_postfix_str(f"loss {_loss:.4f}")
+        if (_idx + 1) % accum_steps == 0:
+            optimizer.step()
+            if scheduler is not None:
+                scheduler.step()
 
-            if (_idx + 1) % accum_steps == 0:
-                optimizer.step()
-                if scheduler is not None:
-                    scheduler.step()
+        torch.cuda.synchronize()
 
-            progress.update(1)
+        reduced_loss = mreduce(loss, world_size)
+        metrics["loss"].update(reduced_loss.item(), inputs.size(0))
 
-    dataset_true_lbl = np.concatenate(dataset_true_lbl)
-    dataset_pred_lbl = np.concatenate(dataset_pred_lbl)
-    dataset_acc = (dataset_true_lbl == dataset_pred_lbl).astype(float).mean()
+        if verbose:
+            print("loss {:.4f}".format(metrics["loss"].average), end="\r")
 
-    return np.mean(losses), dataset_acc
+            if tb_logger is not None:
+                tb_logger.add_scalar(
+                    "batch/train/loss",
+                    metrics["loss"].average,
+                    last_iteration_index + _idx + 1,
+                )
+
+    metrics["true"] = np.concatenate(metrics["true"])
+    metrics["predicted"] = np.concatenate(metrics["predicted"])
+
+    true_labels = np.concatenate(all_gather(metrics["true"]))
+    predicted_labels = np.concatenate(all_gather(metrics["predicted"]))
+
+    dataset_acc = (true_labels == predicted_labels).astype(float).mean()
+
+    return {"loss": metrics["loss"].average, "accuracy": dataset_acc}
 
 
-def valid_fn(model, loader, device, loss_fn, verbose: bool = True):
+@torch.no_grad()
+def valid_fn(
+    model, loader, world_setup, loss_fn, tb_logger=None, last_iteration_index=None
+):
+    """One validation epoch.
+
+    Args:
+        model (torcn.nn.Module): model to train
+        loader (torch.utils.data.Dataloader): loader to use for training
+        world_setup (tuple): (rank, world size)
+        loss_fn (torch.nn.Module or callable): loss function
+        tb_logger (batteries.TensorboardLogger or tensorboardx.SummaryWriter):
+            writer for storing batch values.
+            Default is `None`.
+        last_iteration_index (int): index of last iteration (used with `tb_logger`).
+            Default is `None`.
+
+    Returns:
+        dict with validation metrics (key - str, value - float)
+    """
     model.eval()
 
-    verbose_on_device = verbose and device == 0
+    local_rank, world_size = world_setup
+    last_iteration_index = last_iteration_index or 0
 
-    losses = []
-    dataset_true_lbl = []
-    dataset_pred_lbl = []
-    with torch.no_grad(), tqdm(
-        total=len(loader), desc="valid", disable=not verbose_on_device
-    ) as progress:
-        to_iter = loader
-        for bx, by in loader:
-            bx, by = t2d((bx, by), device)
+    num_batches = len(loader)
+    verbose = local_rank == 0
 
-            if isinstance(bx, (tuple, list)):
-                outputs = model(*bx)
-            elif isinstance(bx, dict):
-                outputs = model(**bx)
-            else:
-                outputs = model(bx)
+    metrics = {"loss": AverageMetter(), "predicted": [], "true": []}
 
-            loss = loss_fn(outputs, by).item()
-            losses.append(loss)
+    for _idx, (inputs, targets) in enumerate(loader):
+        inputs, targets = t2d((inputs, targets), "cuda")
 
-            if verbose_on_device:
-                progress.set_postfix_str(f"loss {loss:.4f}")
+        if isinstance(inputs, (tuple, list)):
+            outputs = model(*inputs)
+        elif isinstance(inputs, dict):
+            outputs = model(**inputs)
+        else:
+            outputs = model(inputs)
 
-            dataset_true_lbl.append(by.flatten().detach().cpu().numpy())
-            dataset_pred_lbl.append(outputs.argmax(1).flatten().detach().cpu().numpy())
+        loss = loss_fn(outputs, targets)
 
-            progress.update(1)
+        metrics["predicted"].append(targets.flatten().detach().cpu().numpy())
+        metrics["true"].append(outputs.argmax(1).flatten().detach().cpu().numpy())
 
-    dataset_true_lbl = np.concatenate(dataset_true_lbl)
-    dataset_pred_lbl = np.concatenate(dataset_pred_lbl)
-    dataset_acc = (dataset_true_lbl == dataset_pred_lbl).astype(float).mean()
+        torch.cuda.synchronize()
 
-    return np.mean(losses), dataset_acc
+        reduced_loss = mreduce(loss, world_size)
+        metrics["loss"].update(reduced_loss.item(), inputs.size(0))
+
+        if verbose:
+            print("loss {:.4f}".format(metrics["loss"].average), end="\r")
+
+            if tb_logger is not None:
+                tb_logger.add_metric(
+                    "batch/valid/loss",
+                    metrics["loss"].average,
+                    last_iteration_index + _idx + 1,
+                )
+
+    metrics["true"] = np.concatenate(metrics["true"])
+    metrics["predicted"] = np.concatenate(metrics["predicted"])
+
+    true_labels = np.concatenate(all_gather(metrics["true"]))
+    predicted_labels = np.concatenate(all_gather(metrics["predicted"]))
+
+    dataset_acc = (true_labels == predicted_labels).astype(float).mean()
+
+    return {"loss": metrics["loss"].average, "accuracy": dataset_acc}
 
 
-def experiment(rank, world_size, logdir: str):
+def experiment(rank, world_size, logdir):
+    """Experiment flow.
+
+    Args:
+        rank (int): process rank
+        world_size (int): world size
+        logdir (pathlib.Path): directory with logs
+    """
+    # preparations
+    torch.cuda.set_device(rank)
     setup(rank, world_size)
+    logdir = Path(logdir) if isinstance(logdir, str) else logdir
     tb_logdir = logdir / "tensorboard"
 
-    def pprint(*args, **kwargs):
-        if rank == 0:
-            print(*args, **kwargs)
+    main_metric = "accuracy"
+    minimize_metric = False
 
-    seed_all()
-    model = SimpleNet()
-    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    model = model.to(rank)
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[rank])
-    optimizer = optim.AdamW(model.parameters(), lr=1e-3)
-    criterion = nn.CrossEntropyLoss()
+    def log(text):
+        if rank == 0:
+            print(text)
 
     train_loader, valid_loader = get_loaders("", rank, world_size)
+    world_setup = (rank, world_size)
 
-    with TensorboardLogger(tb_logdir) as tb:
+    train_batch_cnt = 0
+    valid_batch_cnt = 0
+
+    with TensorboardLogger(str(tb_logdir), write_to_disk=(rank == 0)) as tb:
         stage = "stage0"
-        n_epochs = 10
+        n_epochs = 2
+        log(f"Stage - {stage}")
+
+        seed_all()
+        model = SimpleNet()
+        model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        log("Used sync batchnorm")
+
+        model = model.to(rank)
+        model = nn.parallel.DistributedDataParallel(model, device_ids=[rank])
+        optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+        criterion = nn.CrossEntropyLoss()
 
         checkpointer = CheckpointManager(
             logdir=logdir / stage,
-            metric="accuracy",
-            metric_minimization=False,
+            metric=main_metric,
+            metric_minimization=minimize_metric,
             save_n_best=3,
         )
 
         for ep in range(1, n_epochs + 1):
-            pprint(f"[Epoch {ep}/{n_epochs}]")
-            train_loss, train_acc = train_fn(
-                model, train_loader, rank, criterion, optimizer
+            log(f"[Epoch {ep}/{n_epochs}]")
+            train_metrics = train_fn(
+                model,
+                train_loader,
+                world_setup,
+                criterion,
+                optimizer,
+                tb_logger=tb,
+                last_iteration_index=train_batch_cnt,
             )
-            valid_loss, valid_acc = valid_fn(model, valid_loader, rank, criterion)
-
             if rank == 0:
-                # log metrics
-                tb.metric(
-                    f"{stage}/loss", {"train": train_loss, "valid": valid_loss}, ep
-                )
-                tb.metric(
-                    f"{stage}/accuracy", {"train": train_acc, "valid": valid_acc}, ep,
-                )
+                tb.add_scalars(f"{stage}/train", train_metrics, ep)
+            train_batch_cnt += len(train_loader)
 
-                epoch_metrics = {
-                    "train_loss": train_loss,
-                    "train_accuracy": train_acc,
-                    "valid_loss": valid_loss,
-                    "valid_accuracy": valid_acc,
-                }
+            valid_metrics = valid_fn(
+                model,
+                valid_loader,
+                world_setup,
+                criterion,
+                tb_logger=tb,
+                last_iteration_index=valid_batch_cnt,
+            )
+            valid_batch_cnt += len(valid_loader)
+            if rank == 0:
+                tb.add_scalars(f"{stage}/valid", valid_metrics, ep)
 
                 # store checkpoints
                 checkpointer.process(
-                    score=valid_acc,
+                    score=valid_metrics[main_metric],
                     epoch=ep,
                     checkpoint=make_checkpoint(
-                        stage, ep, model, optimizer, metrics=epoch_metrics,
+                        stage,
+                        ep,
+                        model,
+                        optimizer,
+                        metrics={"train": train_metrics, "valid": valid_metrics},
                     ),
                 )
 
-            pprint(f"            train loss - {train_loss:.5f}")
-            pprint(f"train dataset accuracy - {train_acc:.5f}")
-            pprint(f"            valid loss - {valid_loss:.5f}")
-            pprint(f"valid dataset accuracy - {valid_acc:.5f}")
-            pprint()
+            log(
+                "[{}/{}] train: loss - {}, accuracy - {}".format(
+                    ep, n_epochs, train_metrics["loss"], train_metrics["accuracy"]
+                )
+            )
+            log(
+                "[{}/{}] valid: loss - {}, accuracy - {}".format(
+                    ep, n_epochs, valid_metrics["loss"], valid_metrics["accuracy"]
+                )
+            )
 
         # do a next training stage
         stage = "stage1"
-        n_epochs = 10
-        pprint(f"\n\nStage - {stage}")
+        n_epochs = 3
+        log("*" * 100)
+        log(f"Stage - {stage}")
 
+        # wait other processes
         dist.barrier()
+
         model = SimpleNet()
-        load_checkpoint(logdir / "stage0" / "best.pth", model)
+        load_checkpoint(logdir / "stage0" / "best.pth", model, verbose=True)
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+
         model = model.to(rank)
         model = nn.parallel.DistributedDataParallel(model, device_ids=[rank])
         optimizer = optim.Adam(model.parameters(), lr=1e-4 / 2)
 
         checkpointer = CheckpointManager(
             logdir=logdir / stage,
-            metric="accuracy",
-            metric_minimization=False,
+            metric=main_metric,
+            metric_minimization=minimize_metric,
             save_n_best=3,
         )
 
         for ep in range(1, n_epochs + 1):
-            pprint(f"[Epoch {ep}/{n_epochs}]")
-            train_loss, train_acc = train_fn(
-                model, train_loader, rank, criterion, optimizer
+            log(f"[Epoch {ep}/{n_epochs}]")
+            train_metrics = train_fn(
+                model,
+                train_loader,
+                world_setup,
+                criterion,
+                optimizer,
+                tb_logger=tb,
+                last_iteration_index=train_batch_cnt,
             )
-            valid_loss, valid_acc = valid_fn(model, valid_loader, rank, criterion)
-
             if rank == 0:
-                # log metrics
-                tb.metric(
-                    f"{stage}/loss", {"train": train_loss, "valid": valid_loss}, ep
-                )
-                tb.metric(
-                    f"{stage}/accuracy", {"train": train_acc, "valid": valid_acc}, ep,
-                )
+                tb.add_scalars(f"{stage}/train", train_metrics, ep)
+            train_batch_cnt += len(train_loader)
 
-                epoch_metrics = {
-                    "train_loss": train_loss,
-                    "train_accuracy": train_acc,
-                    "valid_loss": valid_loss,
-                    "valid_accuracy": valid_acc,
-                }
+            valid_metrics = valid_fn(
+                model,
+                valid_loader,
+                world_setup,
+                criterion,
+                tb_logger=tb,
+                last_iteration_index=valid_batch_cnt,
+            )
+            valid_batch_cnt += len(valid_loader)
+            if rank == 0:
+                tb.add_scalars(f"{stage}/valid", valid_metrics, ep)
 
                 # store checkpoints
                 checkpointer.process(
-                    score=valid_acc,
+                    score=valid_metrics[main_metric],
                     epoch=ep,
                     checkpoint=make_checkpoint(
-                        stage, ep, model, optimizer, metrics=epoch_metrics,
+                        stage,
+                        ep,
+                        model,
+                        optimizer,
+                        metrics={"train": train_metrics, "valid": valid_metrics},
                     ),
                 )
 
-            pprint(f"            train loss - {train_loss:.5f}")
-            pprint(f"train dataset accuracy - {train_acc:.5f}")
-            pprint(f"            valid loss - {valid_loss:.5f}")
-            pprint(f"valid dataset accuracy - {valid_acc:.5f}")
-            pprint()
+            log(
+                "[{}/{}] train: loss - {}, accuracy - {}".format(
+                    ep, n_epochs, train_metrics["loss"], train_metrics["accuracy"]
+                )
+            )
+            log(
+                "[{}/{}] valid: loss - {}, accuracy - {}".format(
+                    ep, n_epochs, valid_metrics["loss"], valid_metrics["accuracy"]
+                )
+            )
 
     cleanup()
 
 
 def main() -> None:
-    # do some pre cleaning & stuff
     logdir = Path(".") / "logs" / "ddp-experiment"
-    device = torch.device("cuda:0")
+    world_size = torch.cuda.device_count()
 
     if os.path.isdir(logdir):
         shutil.rmtree(logdir, ignore_errors=True)
         print(f"* Removed existing '{logdir}' directory!")
 
-    world_size = torch.cuda.device_count()
+    os.makedirs(str(logdir))
 
     mp.spawn(experiment, args=(world_size, logdir,), nprocs=world_size, join=True)
 
