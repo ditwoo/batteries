@@ -32,7 +32,7 @@ def _mreduce(rank, world_size):
     to_mreduce = torch.tensor(rank + 1).float().to(rank)
     actual = mreduce(to_mreduce, world_size)
 
-    assert actual == torch.tensor(1.5).float().to(rank)
+    assert actual == torch.tensor(((world_size + 1) / 2), dtype=torch.float).to(rank)
 
     _cleanup()
 
@@ -43,7 +43,9 @@ def _sreduce(rank, world_size):
     to_sreduce = torch.tensor(rank + 1, dtype=torch.int).to(rank)
     actual = sreduce(to_sreduce)
 
-    assert actual == torch.tensor(3, dtype=torch.int).to(rank)
+    assert actual == torch.tensor(
+        (world_size * (world_size + 1)) // 2, dtype=torch.int
+    ).to(rank)
 
     _cleanup()
 
