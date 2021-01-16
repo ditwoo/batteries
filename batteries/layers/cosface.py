@@ -30,7 +30,11 @@ class CosFace(nn.Module):
     """
 
     def __init__(
-        self, in_features: int, out_features: int, s: float = 64.0, m: float = 0.35,
+        self,
+        in_features: int,
+        out_features: int,
+        s: float = 64.0,
+        m: float = 0.35,
     ):
         """
         Args:

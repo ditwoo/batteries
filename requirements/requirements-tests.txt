@@ -2,7 +2,6 @@ numpy>=1.16.4
 tqdm>=4.33.0
 torch>=1.1.0
 tensorboardX>=2.1
-packaging
 scikit-learn
 flake8
 black

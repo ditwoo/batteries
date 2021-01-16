@@ -2,8 +2,6 @@ import random
 
 import numpy as np
 import torch
-from packaging.version import Version, parse
-from torch.backends import cudnn
 
 
 def t2d(tensor, device):
@@ -15,8 +13,7 @@ def t2d(tensor, device):
         device (str or torch.device): device where should be moved device
 
     Returns:
-        torch.Tensor or Dict[str, torch.Tensor] or list/tuple of torch.Tensor
-        based on `tensor` type with data moved to a specified device
+        torch.Tensor or Dict[str, torch.Tensor] or List[torch.Tensor] based on `tensor` type.
     """
     if isinstance(tensor, torch.Tensor):
         return tensor.to(device)
@@ -30,12 +27,21 @@ def t2d(tensor, device):
         return res
 
 
-def seed_all(seed=42) -> None:
+def seed_all(seed=42, deterministic=True, benchmark=True) -> None:
     """Fix all seeds so results can be reproducible.
 
     Args:
         seed (int): random seed.
-            Default is 42.
+            Default is `42`.
+        deterministic (bool): flag to use cuda deterministic
+            algoritms for computations.
+            Default is `True`.
+        benchmark (bool): flag to use benchmark option
+            to select the best algorithm for computatins.
+            Should be used `True` with fixed size
+            data (images or similar) for other types of
+            data is better to use `False` option.
+            Default is `True`.
     """
     try:
         import torch
@@ -45,24 +51,12 @@ def seed_all(seed=42) -> None:
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
 
-    try:
-        import tensorflow as tf
-    except ImportError:
-        pass
-    else:
-        if parse(tf.__version__) >= Version("2.0.0"):
-            tf.random.set_seed(seed)
-        elif parse(tf.__version__) <= Version("1.13.2"):
-            tf.set_random_seed(seed)
-        else:
-            tf.compat.v1.set_random_seed(seed)
-
     random.seed(seed)
     np.random.seed(seed)
     # reproducibility
-    cudnn.deterministic = True
+    torch.backends.cudnn.deterministic = deterministic
     # small speedup
-    cudnn.benchmark = False
+    torch.backends.cudnn.benchmark = benchmark
 
 
 def zero_grad(optimizer) -> None:
