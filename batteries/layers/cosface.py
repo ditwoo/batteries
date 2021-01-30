@@ -191,9 +191,7 @@ class AdaCos(nn.Module):
                     .mean()
                 )
                 theta_median = theta[one_hot > 0].median()
-                theta_median = torch.min(
-                    torch.full_like(theta_median, math.pi / 4), theta_median
-                )
+                theta_median = torch.min(torch.full_like(theta_median, math.pi / 4), theta_median)
                 self.s = (torch.log(b_avg) / torch.cos(theta_median)).item()
 
         logits = self.s * cos_theta

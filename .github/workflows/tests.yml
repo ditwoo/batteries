@@ -26,7 +26,7 @@ jobs:
       - name: Codestyle
         run: |
           # general check
-          # black --check batteries
+          black --check batteries --line-length=120
           # python code quality check
           flake8 \
             --count \

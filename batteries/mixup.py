@@ -15,8 +15,7 @@ def mixup_batch(batch: torch.tensor, alphas: torch.tensor) -> torch.tensor:
         mixed torch.tensor with shape (batch_size, ...)
     """
     out = (
-        batch[0::2].transpose(0, -1) * alphas[0::2]
-        + batch[1::2].transpose(0, -1) * alphas[1::2]  # noqa: W503
+        batch[0::2].transpose(0, -1) * alphas[0::2] + batch[1::2].transpose(0, -1) * alphas[1::2]  # noqa: W503
     ).transpose(0, -1)
     return out
 

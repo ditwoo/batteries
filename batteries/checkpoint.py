@@ -1,14 +1,13 @@
 import json
 import os
 import shutil
+import warnings
 from collections import OrderedDict
 
 import torch
 
 
-def make_checkpoint(
-    stage, epoch, model, optimizer=None, scheduler=None, metrics=None
-) -> dict:
+def make_checkpoint(stage, epoch, model, optimizer=None, scheduler=None, metrics=None, **kwargs) -> dict:
     """Generate checkpoint dict.
 
     Args:
@@ -21,23 +20,16 @@ def make_checkpoint(
             Default is ``None``.
         metrics (dict, optional): metrics to store in checkpoint.
             Default is ``None``.
+        **kwargs: other keys with values to store in checkpoint.
 
     Returns:
         dict: [description]
     """
-    if isinstance(
-        model, (torch.nn.DataParallel, torch.nn.parallel.DistributedDataParallel)
-    ):
-        return make_checkpoint(
-            stage, epoch, model.module, optimizer, scheduler, metrics
-        )
+    if isinstance(model, (torch.nn.DataParallel, torch.nn.parallel.DistributedDataParallel)):
+        return make_checkpoint(stage, epoch, model.module, optimizer, scheduler, metrics)
 
     if not isinstance(model, torch.nn.Module):
-        raise ValueError(
-            "Expected that model will be an instance of nn.Module but got {}!".format(
-                type(model)
-            )
-        )
+        raise ValueError("Expected that model will be an instance of nn.Module but got {}!".format(type(model)))
 
     checkpoint = {"stage": stage, "epoch": epoch}
     if model is not None:
@@ -48,6 +40,13 @@ def make_checkpoint(
         checkpoint["scheduler_state_dict"] = scheduler.state_dict()
     if metrics is not None:
         checkpoint["metrics"] = metrics
+
+    for key, value in kwargs.items():
+        if key in checkpoint:
+            warnings.warn(f"Found duplicated keyword ('{key}'), it will be ignored!")
+            continue
+        checkpoint[key] = value
+
     return checkpoint
 
 
@@ -165,9 +164,7 @@ def average_model_state_dicts(*files) -> OrderedDict:
     for f in files:
         state = torch.load(
             f,
-            map_location=(
-                lambda s, _: torch.serialization.default_restore_location(s, "cpu")
-            ),
+            map_location=(lambda s, _: torch.serialization.default_restore_location(s, "cpu")),
         )
         # Copies over the settings from the first checkpoint
         if new_state is None:
@@ -244,9 +241,7 @@ class CheckpointManager:
         self.metrics = []  # list of dicts where 2 keys required - metric_name & 'epoch'
         self.best_metrics = []
         self.save_fn = save_fn
-        self.metrics_file = (
-            metrics_file if metrics_file.endswith(".json") else f"{metrics_file}.json"
-        )
+        self.metrics_file = metrics_file if metrics_file.endswith(".json") else f"{metrics_file}.json"
 
     def __repr__(self):  # noqa: D105
         return (
@@ -339,9 +334,7 @@ class CheckpointManager:
                 key=lambda record: record[self.metric_name],
                 reverse=not self.metric_minimization,
             )
-            to_remove = os.path.join(
-                self.logdir, self._checkpoint_name(self.best_metrics.pop(-1)["epoch"])
-            )
+            to_remove = os.path.join(self.logdir, self._checkpoint_name(self.best_metrics.pop(-1)["epoch"]))
             try:
                 os.remove(to_remove)
             except FileNotFoundError:

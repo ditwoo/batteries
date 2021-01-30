@@ -19,9 +19,7 @@ def classification_accuracy(y_true: torch.Tensor, y_pred: torch.Tensor) -> float
     return score
 
 
-def binary_precision(
-    y_true: torch.Tensor, y_pred: torch.Tensor, threshold: float = 0.5
-) -> float:
+def binary_precision(y_true: torch.Tensor, y_pred: torch.Tensor, threshold: float = 0.5) -> float:
     """Binary precision score.
 
     Args:
@@ -51,9 +49,7 @@ def binary_precision(
     return precision
 
 
-def binary_recall(
-    y_true: torch.Tensor, y_pred: torch.Tensor, threshold: float = 0.5
-) -> float:
+def binary_recall(y_true: torch.Tensor, y_pred: torch.Tensor, threshold: float = 0.5) -> float:
     """Binary recall score.
 
     Args:
@@ -83,9 +79,7 @@ def binary_recall(
     return recall
 
 
-def binary_fbeta(
-    y_true: torch.Tensor, y_pred: torch.Tensor, beta: float = 1, threshold: float = 0.5
-) -> float:
+def binary_fbeta(y_true: torch.Tensor, y_pred: torch.Tensor, beta: float = 1, threshold: float = 0.5) -> float:
     """Binary f beta score.
 
     Args:

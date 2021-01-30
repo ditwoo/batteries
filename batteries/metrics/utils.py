@@ -28,8 +28,4 @@ class AverageMetter:
         self.average = self.sum / self.counter
 
     def __repr__(self):  # noqa: D105
-        return (
-            f"AverageMetter(value={self.value},"
-            f"average={self.average},sum={self.sum},"
-            f"counter={self.counter})"
-        )
+        return f"AverageMetter(value={self.value}," f"average={self.average},sum={self.sum}," f"counter={self.counter})"

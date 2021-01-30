@@ -37,12 +37,7 @@ class ArcMarginProduct(nn.Module):
 
     def __repr__(self) -> str:
         """Object representation."""
-        rep = (
-            "ArcMarginProduct("
-            f"in_features={self.in_features},"
-            f"out_features={self.out_features}"
-            ")"
-        )
+        rep = "ArcMarginProduct(" f"in_features={self.in_features}," f"out_features={self.out_features}" ")"
         return rep
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
@@ -105,12 +100,7 @@ class SoftMax(nn.Module):
 
     def __repr__(self) -> str:
         """Object representation."""
-        rep = (
-            "SoftMax("
-            f"in_features={self.in_features},"
-            f"out_features={self.out_features}"
-            ")"
-        )
+        rep = "SoftMax(" f"in_features={self.in_features}," f"out_features={self.out_features}" ")"
         return rep
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
