@@ -25,8 +25,10 @@ jobs:
 
       - name: Codestyle
         run: |
+          # imports
+          isort --line-length=120 --check-only batteries
           # general check
-          black --check batteries --line-length=120
+          black --line-length=120 --check batteries
           # python code quality check
           flake8 \
             --count \

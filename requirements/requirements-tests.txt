@@ -6,3 +6,4 @@ scikit-learn
 flake8
 black
 pytest
+isort

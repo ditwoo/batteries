@@ -4,8 +4,13 @@ tests: FORCE
 	PYTHONPATH=. pytest -ra -q -v tests
 
 codestyle:
+	isort --line-length=120 batteries
+	black --line-length=120 batteries
+
+codestyle-check:
 	# general check
-	black --check batteries
+	black --line-length=120 batteries
+
 	# python code quality check
 	flake8 \
 		--max-line-length 120 \
