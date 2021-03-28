@@ -1,17 +1,18 @@
-import sys
-import pytest
-import numpy as np
+# flake: noqa
 
+import sys
+
+import numpy as np
+import pytest
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import TensorDataset, Subset, DataLoader
+from torch.utils.data import DataLoader, Subset, TensorDataset
 
 # local files
 from batteries import seed_all
 from batteries.progress import tqdm
 from batteries.utils import t2d
-
 
 IS_CUDA_PRESENT = torch.cuda.is_available()
 if IS_CUDA_PRESENT:
@@ -112,9 +113,7 @@ def test_train_fn_on_cpu():
     for epoch_idx in range(n_epochs):
         train_loss = train_fn(model, train_loader, device, criterion, optimizer)
         valid_loss = valid_fn(model, valid_loader, device, criterion)
-        metrics.append(
-            {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
-        )
+        metrics.append({"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss})
         print(f"[epoch {epoch_idx + 1}] loss - {train_loss:.5f}")
         print(f"[epoch {epoch_idx + 1}] loss - {valid_loss:.5f}")
 
@@ -160,9 +159,7 @@ def test_train_fn_on_cuda_0():
     for epoch_idx in range(n_epochs):
         train_loss = train_fn(model, train_loader, device, criterion, optimizer)
         valid_loss = valid_fn(model, valid_loader, device, criterion)
-        metrics.append(
-            {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
-        )
+        metrics.append({"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss})
         print(f"[epoch {epoch_idx + 1}] loss - {train_loss:.5f}")
         print(f"[epoch {epoch_idx + 1}] loss - {valid_loss:.5f}")
 
@@ -210,9 +207,7 @@ def test_train_fn_dp_cuda():
     for epoch_idx in range(n_epochs):
         train_loss = train_fn(model, train_loader, device, criterion, optimizer)
         valid_loss = valid_fn(model, valid_loader, device, criterion)
-        metrics.append(
-            {"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss}
-        )
+        metrics.append({"epoch": epoch_idx + 1, "train_loss": train_loss, "valid_loss": valid_loss})
         print(f"[epoch {epoch_idx + 1}] loss - {train_loss:.5f}")
         print(f"[epoch {epoch_idx + 1}] loss - {valid_loss:.5f}")
 

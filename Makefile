@@ -1,7 +1,7 @@
 
 
 tests: FORCE
-	PYTHONPATH=. pytest -ra -q -v tests
+	PYTHONPATH=. pytest -ra -q -v .
 
 codestyle:
 	isort --line-length=120 batteries

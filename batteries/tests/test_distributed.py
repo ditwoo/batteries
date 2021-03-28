@@ -1,11 +1,13 @@
-import os
-import pytest
+# flake: noqa
 
+import os
+
+import pytest
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from batteries.distributed import all_gather, mreduce, sreduce
 
+from batteries.distributed import all_gather, mreduce, sreduce
 
 if torch.cuda.is_available():
     IS_MULTIPLE_CUDA_DEVICES = torch.cuda.device_count() > 1
@@ -43,9 +45,7 @@ def _sreduce(rank, world_size):
     to_sreduce = torch.tensor(rank + 1, dtype=torch.int).to(rank)
     actual = sreduce(to_sreduce)
 
-    assert actual == torch.tensor(
-        (world_size * (world_size + 1)) // 2, dtype=torch.int
-    ).to(rank)
+    assert actual == torch.tensor((world_size * (world_size + 1)) // 2, dtype=torch.int).to(rank)
 
     _cleanup()
 
@@ -57,9 +57,7 @@ def _all_gather(rank, world_size):
     actual = all_gather(to_gather)
     actual = torch.cat(actual)
 
-    expected = torch.cat(
-        [torch.ones(3, dtype=torch.int) * (i + 1) for i in range(world_size)]
-    )
+    expected = torch.cat([torch.ones(3, dtype=torch.int) * (i + 1) for i in range(world_size)])
 
     assert torch.all(actual.eq(expected))
 

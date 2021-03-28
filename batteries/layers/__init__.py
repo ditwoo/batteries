@@ -2,3 +2,4 @@
 from .arc import ArcMarginProduct, SoftMax
 from .arcface import ArcFace, SubCenterArcFace
 from .cosface import AdaCos, CosFace
+from .rms_norm import RMSNorm

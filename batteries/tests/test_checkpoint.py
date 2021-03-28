@@ -1,16 +1,19 @@
-import os
+# flake: noqa
+
 import json
-import numpy as np
+import os
 from tempfile import TemporaryDirectory
 
+import numpy as np
 import torch
 import torch.nn as nn
+
 from batteries.checkpoint import (
     CheckpointManager,
+    average_model_state_dicts,
+    load_checkpoint,
     make_checkpoint,
     save_checkpoint,
-    load_checkpoint,
-    average_model_state_dicts,
 )
 
 
@@ -42,9 +45,7 @@ def test_checkpoint_manager_metric_maximization():
     best_metrics = metrics[best_metric_epochs]
     best_metric_epochs += 1
 
-    expected_files = [metric_file, "last.pth", "best.pth"] + [
-        f"experiment_{epoch}.pth" for epoch in best_metric_epochs
-    ]
+    expected_files = [metric_file, "last.pth", "best.pth"] + [f"experiment_{epoch}.pth" for epoch in best_metric_epochs]
 
     with TemporaryDirectory() as tmp_dir:
         checkpointer = CheckpointManager(
@@ -78,9 +79,7 @@ def test_checkpoint_manager_metric_maximization():
 
         assert metric_file_content["metric_name"] == metric_name
         assert metric_file_content["metric_minimization"] == minimize
-        assert metric_file_content["values"] == [
-            {"epoch": e, metric_name: m} for e, m in enumerate(metrics, 1)
-        ]
+        assert metric_file_content["values"] == [{"epoch": e, metric_name: m} for e, m in enumerate(metrics, 1)]
 
     with TemporaryDirectory() as tmp_dir:
         checkpointer = CheckpointManager(
@@ -118,8 +117,7 @@ def test_checkpoint_manager_metric_maximization():
         assert metric_file_content["metric_name"] == metric_name
         assert metric_file_content["metric_minimization"] == minimize
         assert metric_file_content["values"] == [
-            {"epoch": e, metric_name: m, "random_number": r}
-            for e, (m, r) in enumerate(zip(metrics, random_nums), 1)
+            {"epoch": e, metric_name: m, "random_number": r} for e, (m, r) in enumerate(zip(metrics, random_nums), 1)
         ]
 
 
@@ -182,9 +180,7 @@ def test_make_checkpoint():
     assert isinstance(checkpoint, dict)
     assert "stage" in checkpoint and checkpoint["stage"] == stage
     assert "epoch" in checkpoint and checkpoint["epoch"] == epoch
-    assert "model_state_dict" in checkpoint and compare_state_dicts(
-        checkpoint["model_state_dict"], model.state_dict()
-    )
+    assert "model_state_dict" in checkpoint and compare_state_dicts(checkpoint["model_state_dict"], model.state_dict())
     assert "optimizer_state_dict" in checkpoint and compare_state_dicts(
         checkpoint["optimizer_state_dict"], optimizer.state_dict()
     )
@@ -196,7 +192,11 @@ def test_save_checkpoint():
     checkpoint = {"some": "content"}
     with TemporaryDirectory() as tmp_dir:
         save_checkpoint(
-            checkpoint, tmp_dir, "checkpoint", is_best=False, is_last=True,
+            checkpoint,
+            tmp_dir,
+            "checkpoint",
+            is_best=False,
+            is_last=True,
         )
         assert os.path.isfile(os.path.join(tmp_dir, "checkpoint.pth"))
         assert not os.path.isfile(os.path.join(tmp_dir, "best.pth"))
@@ -214,7 +214,11 @@ def test_load_checkpoint():
 
     with TemporaryDirectory() as tmp_dir:
         save_checkpoint(
-            checkpoint, tmp_dir, "checkpoint", is_best=False, is_last=True,
+            checkpoint,
+            tmp_dir,
+            "checkpoint",
+            is_best=False,
+            is_last=True,
         )
         assert os.path.isfile(os.path.join(tmp_dir, "checkpoint.pth"))
         assert not os.path.isfile(os.path.join(tmp_dir, "best.pth"))
@@ -227,9 +231,7 @@ def test_load_checkpoint():
         )
 
     assert compare_state_dicts(model.state_dict(), model_from_checkpoint.state_dict())
-    assert compare_state_dicts(
-        optimizer.state_dict(), optimizer_from_checkpoint.state_dict()
-    )
+    assert compare_state_dicts(optimizer.state_dict(), optimizer_from_checkpoint.state_dict())
 
 
 def test_averate_model_state_dicts():
@@ -268,4 +270,3 @@ def test_averate_model_state_dicts():
                 os.path.join(tmp_dir, "model2.pth"),
             )["model_state_dict"]
         )
-

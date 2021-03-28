@@ -1,15 +1,10 @@
-import pytest
-import torch
+# flake: noqa
+
 import numpy as np
+import torch
 from sklearn import metrics
 
-
-from batteries.metrics.torch import (
-    classification_accuracy,
-    binary_precision,
-    binary_recall,
-    binary_fbeta,
-)
+from batteries.metrics.torch import binary_fbeta, binary_precision, binary_recall, classification_accuracy
 
 
 def _fix_seed():
@@ -28,9 +23,7 @@ def test_accuracy():
     ground_truth = np.random.randint(0, 1000, size=size)
 
     expected = metrics.accuracy_score(ground_truth, preds)
-    actual = classification_accuracy(
-        y_true=torch.from_numpy(ground_truth), y_pred=torch.from_numpy(preds)
-    )
+    actual = classification_accuracy(y_true=torch.from_numpy(ground_truth), y_pred=torch.from_numpy(preds))
 
     assert np.allclose(expected, actual)
 

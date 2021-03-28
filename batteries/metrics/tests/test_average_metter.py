@@ -1,5 +1,8 @@
+# flake: noqa
+
 import numpy as np
-from batteries import AverageMetter
+
+from batteries.metrics.utils import AverageMetter
 
 
 def test_with_common_setup():
@@ -95,4 +98,3 @@ def test_with_nan():
     assert metric.counter == 0
     assert metric.sum == 0
     assert metric.average == 0
-

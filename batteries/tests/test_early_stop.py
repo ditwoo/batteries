@@ -1,4 +1,6 @@
-from batteries import EarlyStopIndicator
+# flake: noqa
+
+from batteries.early_stop import EarlyStopIndicator
 
 
 def test_minimization_stop_case():

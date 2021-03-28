@@ -25,10 +25,12 @@ jobs:
 
       - name: Codestyle
         run: |
-          # imports
-          isort --line-length=120 --check-only batteries
+          # # imports
+          # isort --line-length=120 --check-only batteries
+
           # general check
           black --line-length=120 --check batteries
+
           # python code quality check
           flake8 \
             --count \
@@ -38,4 +40,4 @@ jobs:
 
       - name: Run tests
         run: |
-          PYTHONPATH=. pytest -ra -q -v tests
+          PYTHONPATH=. pytest -ra -q -v .

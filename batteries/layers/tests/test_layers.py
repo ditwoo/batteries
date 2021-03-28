@@ -1,7 +1,10 @@
+# flake: noqa
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-from batteries.layers import CosFace, ArcFace, SoftMax
+
+from batteries.layers import ArcFace, CosFace, SoftMax
 
 
 def normalize(m: np.ndarray) -> np.ndarray:
@@ -30,7 +33,7 @@ def test_softmax():
         ],
         dtype="f",
     )
-    target = np.array([0, 2], dtype="l")
+    # target = np.array([0, 2], dtype="l")
     weight = np.array(
         [
             [0.1, 0.2, 0.3, 0.4],
