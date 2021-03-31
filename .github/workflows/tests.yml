@@ -25,18 +25,9 @@ jobs:
 
       - name: Codestyle
         run: |
-          # # imports
-          # isort --line-length=120 --check-only batteries
-
-          # general check
-          black --line-length=120 --check batteries
-
-          # python code quality check
-          flake8 \
-            --count \
-            --max-line-length 120 \
-            --ignore=Q000,D100,D205,D212,D415,W605 \
-            batteries
+          isort --line-length=120 --profile=black --check-only batteries;
+          black --line-length=120 --check batteries;
+          flake8 --count --max-line-length=120 --ignore=Q000,D100,D205,D212,D415,W605 batteries
 
       - name: Run tests
         run: |
