@@ -25,8 +25,8 @@ jobs:
 
       - name: Codestyle
         run: |
-          isort --line-length=120 --profile=black --check-only batteries;
-          black --line-length=120 --check batteries;
+          isort --line-length=120 --profile=black --check-only batteries && \
+          black --line-length=120 --check batteries && \
           flake8 --count --max-line-length=120 --ignore=Q000,D100,D205,D212,D415,W605 batteries
 
       - name: Run tests
