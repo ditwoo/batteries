@@ -1,5 +1,4 @@
 
-
 ## Batteries
 
 <p align="center">
@@ -8,27 +7,45 @@
 
 ## Generalized experiment flow
 
-0. prepare environment, directory for logs, splits, datasets, augmentations (do a small research based on data).
-
-    ```python
-    # pytorch speed hacks
-    torch.autograd.set_detect_anomaly(False)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    # if you have issues with data loader workers
-    # (too much opened files)
-    torch.multiprocessing.set_sharing_strategy("file_system")
-    ```
-
-    the most simple way to disable warnings:
-
-    ```bash
-    PYTHONWARNINGS='ignore' python3 my_file.py
-    ```
-
 <ol>
 
-<li> seed everything </li>
+<li> prepare environment, directory for logs, splits, datasets, augmentations (do a small research based on data).
+
+```python
+torch.autograd.set_detect_anomaly(False)  # small training speed improvement
+torch.backends.cudnn.deterministic = True  # enabled reproducibility
+torch.backends.cudnn.benchmark = False  # should be enabled for networks with fixed input & output sizes
+# if you have issues with data loader workers
+# (too much opened files)
+torch.multiprocessing.set_sharing_strategy("file_system")
+```
+
+the most simple way to disable warnings:
+
+```bash
+PYTHONWARNINGS='ignore' python3 my_file.py
+```
+
+</li>
+
+<li> seed everything
+
+```python
+import random
+import numpy as np
+import torch
+
+seed = 42
+
+random.seed(seed)
+np.random.seed(seed)
+torch.backends.cudnn.deterministic = True
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+```
+
+
+</li>
 
 <li> create and initialize model, optimizer, scheduler
 
@@ -37,7 +54,7 @@
 <li>
 
 <details>
-<summary> load weights from checkpoint/pretrain or initialize (not randomly with fixed seed!) </summary>
+<summary> load weights from checkpoint/pretrain or initialize with fixed seed </summary>
 <p>
 
 ```python
@@ -73,7 +90,7 @@ loader = DataLoader(
 <li>
 
 <details>
-<summary> turn on sync batch norm for DDP setup: </summary>
+<summary> turn on sync batch norm for DDP setup </summary>
 <p>
 
 ```python
@@ -127,7 +144,50 @@ for batch_index, (x, y) in enumerate(train_loader):
 
 <li> log metrics (use <b><a href="https://pytorch.org/docs/stable/tensorboard.html">tensorboard</a></b> / <b><a href="https://tensorboardx.readthedocs.io/en/latest/tensorboard.html">tensorboardX</a></b> / <b><a href="https://docs.wandb.ai/">wandb</a></b> / <b><a href="https://www.mlflow.org/docs/latest/index.html">mlflow</a></b>) </li>
 
-<li> generate checkpoints for model - store last state, best state (or few best states) </li>
+<li>
+
+<details>
+<summary> generate checkpoints for model - store last state, best state (or few best states) </summary>
+<p>
+
+
+```python
+from batteries import CheckpointManager
+
+# ...
+checkpointer = CheckpointManager(
+    logdir=f"{logdir}/{stage}",
+    metric=main_metric,
+    metric_minimization=minimize_metric,
+    save_n_best=5,
+)
+
+# ...
+for epoch_index in range(1, n_epochs + 1):
+    train_metrics = train_fn(...)
+    valid_metrics = valid_fn(...)
+    # main process will write weights to logdir
+    if local_rank == 0:
+        checkpointer.process(
+            score=valid_metrics[main_metric],
+            epoch=epoch_index,
+            checkpoint=make_checkpoint(
+                stage,
+                epoch_index,
+                model,
+                optimizer,
+                epoch_scheduler,
+                metrics={"train": train_metrics, "valid": valid_metrics},
+                experiment_args=args,
+                model_args=model_args,
+            ),
+        )
+```
+
+
+</p>
+</details>
+</li>
 </ul>
 
 </li>
@@ -150,14 +210,3 @@ for batch_index, (x, y) in enumerate(train_loader):
 
 Good example of training script - [pytorch-image-models](https://github.com/rwightman/pytorch-image-models/blob/master/train.py)
 
-### Tests
-
-```bash
-make tests
-```
-
-### Removing unnecessary files
-
-```bash
-make clear
-```
