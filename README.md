@@ -26,35 +26,121 @@
     PYTHONWARNINGS='ignore' python3 my_file.py
     ```
 
+<ol>
 
-1. seed everything
+<li> seed everything </li>
 
-2. create and initialize model, optimizer, scheduler
+<li> create and initialize model, optimizer, scheduler
 
-    2.1. load weights from checkpoint/pretrain or initialize (not randomly with fixed seed!)
+<ul>
 
-    2.2. if [`DistributedDataParallel`](https://pytorch.org/docs/stable/notes/ddp.html) - turn on sync batch norm
+<li>
 
-3. create datasets/dataloaders objects
+<details>
+<summary> load weights from checkpoint/pretrain or initialize (not randomly with fixed seed!) </summary>
+<p>
 
-4. train specified number of epochs
+```python
+from torch.utils.data import DataLoader
+import torch.distributed as dist
+from torchvision.models import resnet18
 
-    4.1. update parameters on train set (do gradient accumulation & scheduler steps)
+from batteries import seed_all, load_checkpoint
 
-    4.2. compute metric on validation set (if need to compute metrics in epoch)
 
-    4.3. log metrics (use tensorboard or something similar)
+# before model creation
+seed_all(42)
+model = resnet18()
+# ...
 
-    4.4. generate checkpoints for model - store last state, best state (or few best states)
+# when load state from checkpoint
+dist.barrier()
+load_checkpoint("checkpoint.pth", model)
+# ...
 
-5. save the best score on validation set and compare it with score on leader board
+# fix seeds in workers
+loader = DataLoader(
+    dataset,
+    # ...
+    worker_init_fn=seed_all,
+)
+```
 
-6. apply some postprocessing for submission - blend of scores (mean, power average, ranked average), SWA model checkpoints
+</p>
+</details>
+</li>
 
-7. check metric on test set and compare it with validation score
+<li>
 
-8. go to 0 and try to improve score on local validation and test set
+<details>
+<summary> turn on sync batch norm for DDP setup: </summary>
+<p>
 
+```python
+import torch.nn as nn
+from torchvision.models import resnet18
+
+model = resnet18()
+model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+model = nn.parallel.DistributedDataParallel(model, device_ids=[device])
+```
+
+</p>
+</details>
+
+</li>
+
+</ul>
+
+<li> create datasets/dataloaders objects </li>
+
+<li> train specified number of epochs
+
+<ul>
+<li>
+<details>
+<summary> update parameters on train set (do gradient accumulation & scheduler steps) </summary>
+<p>
+
+```python
+for batch_index, (x, y) in enumerate(train_loader):
+    x, y = x.cuda(), y.cuda()
+    # set grads to zero
+    optimizer.zero_grad(set_to_none=True)
+    # retrieve outputs
+    out = model(x)
+    # compute loss on batch
+    loss = loss_fn(out, y)
+    # accumulate gradients
+    loss.backward()
+    # do weights update
+    if (batch_index + 1) % accumulation_steps == 0:
+        optimizer.step()
+```
+
+</p>
+</details>
+
+</li>
+
+<li> compute metric on validation set </li>
+
+<li> log metrics (use <b><a href="https://pytorch.org/docs/stable/tensorboard.html">tensorboard</a></b> / <b><a href="https://tensorboardx.readthedocs.io/en/latest/tensorboard.html">tensorboardX</a></b> / <b><a href="https://docs.wandb.ai/">wandb</a></b> / <b><a href="https://www.mlflow.org/docs/latest/index.html">mlflow</a></b>) </li>
+
+<li> generate checkpoints for model - store last state, best state (or few best states) </li>
+</ul>
+
+</li>
+
+<li> save the best score on validation set and compare it with score on leader board </li>
+
+<li> apply some postprocessing for submission - blend of scores (mean, power average, ranked average), SWA model checkpoints </li>
+
+<li> check metric on test set and compare it with validation score </li>
+
+<li> go to 1 and try to improve score on local validation and test set </li>
+
+</ol>
 
 ### Experiment examples
 
