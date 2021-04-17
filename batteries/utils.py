@@ -7,7 +7,7 @@ import torch
 INITIALIZED_LOGGERS = {}
 
 
-def get_logger(name, log_file=None, log_level=logging.INFO):
+def get_logger(name, log_file=None, log_level=logging.INFO, disabled=False):
     """Create logger for experiments.
 
     Args:
@@ -19,10 +19,18 @@ def get_logger(name, log_file=None, log_level=logging.INFO):
             Default is `None`.
         log_level (int): logging level.
             Default is `logging.INFO`.
+        disabled (bool): option to return disabled logger
+            (if you don't need logger output).
+            Default is `False`.
 
     Returns:
         logging.Logger object.
     """
+    if disabled:
+        logger = logging.getLogger("disabled")
+        logger.addHandler(logging.NullHandler())
+        return logger
+
     logger = logging.getLogger(name)
     if name in INITIALIZED_LOGGERS:
         return logger

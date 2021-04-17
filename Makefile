@@ -4,12 +4,12 @@ tests: FORCE
 	PYTHONPATH=. pytest -ra -q -v .
 
 codestyle:
-	isort --line-length=120 --profile=black batteries; \
+	isort --line-length=120 --profile=black batteries && \
 	black --line-length=120 batteries
 
 codestyle-check:
-	isort --line-length=120 --profile=black batteries; \
-	black --line-length=120 batteries; \
+	isort --line-length=120 --profile=black batteries && \
+	black --line-length=120 batteries && \
 	flake8 --max-line-length 120 --ignore=Q000,D100,D205,D212,D400,D415,W605 batteries
 
 clear:
