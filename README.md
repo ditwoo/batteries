@@ -28,7 +28,9 @@ PYTHONWARNINGS='ignore' python3 my_file.py
 
 </li>
 
-<li> seed everything
+<li>
+<details>
+<summary>seed everything</summary> 
 
 ```python
 import random
@@ -44,7 +46,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 ```
 
-
+</details>
 </li>
 
 <li> create and initialize model, optimizer, scheduler
