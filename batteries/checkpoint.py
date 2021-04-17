@@ -117,7 +117,7 @@ def load_checkpoint(
 
     if "model_state_dict" in checkpoint and model is not None:
         state_dict = checkpoint["model_state_dict"]
-        if isinstance(model, torch.nn.DataParallel):
+        if isinstance(model, (torch.nn.DataParallel, torch.nn.parallel.DistributedDataParallel)):
             model.module.load_state_dict(state_dict)
         else:
             model.load_state_dict(state_dict)

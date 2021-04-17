@@ -1,4 +1,5 @@
 import pickle
+from contextlib import contextmanager
 
 import torch
 from torch import distributed as dist
@@ -86,3 +87,30 @@ def all_gather(data):
         data_list.append(pickle.loads(buffer))
 
     return data_list
+
+
+@contextmanager
+def zero_rank_first(local_rank):
+    """Decorator which makes sure that process with local_rank == 0
+    will do some code block first and wait for other processes to finish.
+
+    Example:
+
+        >>> # somewhere in DDP code
+        >>> import torchvision
+        >>> # master process will load data and other processes will use cache
+        >>> with master_process_first(local_rank):
+        >>>     train_dataset = torchvision.datasets.CIFAR10("/cifat10", train=True, download=True)
+        >>>     valid_dataset = torchvision.datasets.CIFAR10("/cifat10", train=False, download=True)
+
+    Args:
+        local_rank (int): process rank.
+    """
+    if local_rank not in {-1, 0}:
+        torch.distributed.barrier()
+    yield
+    if local_rank == 0:
+        torch.distributed.barrier()
+
+
+__all__ = ("sreduce", "mreduce", "all_gather", "zero_rank_first")
