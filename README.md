@@ -345,7 +345,12 @@ def train_fn(model, loader, device, loss_fn, optimizer, scheduler=None, accumula
         metrics["loss"].update(_loss, x.size(0))
 
         if verbose and (batch_index + 1) % int(num_batches * verbose) == 0:
-            logger.info("Train {} / {}: loss - {:.5f}".format(batch_index + 1, num_batches, metrics["loss"].average))
+            logger.info("Train {curr_idx} / {total} ({pcnt_progress:.1%}): loss - {loss:.5f}".format(
+                curr_idx=batch_index + 1, 
+                total=num_batches, 
+                pcnt_progress=(batch_index + 1) / num_batches,
+                loss=metrics["loss"].average
+            ))
 
     return {"loss": metrics["loss"].average}
 
