@@ -267,16 +267,40 @@ def cleanup():
     dist.destroy_process_group()
 
 
-def get_loaders(*args, **kwargs):
+def get_loaders(batch_size, num_workers):
     """Build loaders for training.
     
     Args:
+        batch_size (int): number of elements to use in train/valid data batches.
+        num_workers (int): number of processes to use for generation batches.
     
     Returns:
         train and validation data loaders (torch.utils.data.DataLoader)
     """
-    # TODO: finish this function
-    return None, None
+    # TODO: finish train dataset
+    train_dataset = ...
+    train_sampler = DistributedSampler(train_dataset, shuffle=True)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        worker_init_fn=seed_all,
+        drop_last=True,
+        sampler=train_sampler,
+    )
+
+    # TODO: finish validation dataset
+    valid_dataset = ...
+    valid_sampler = DistributedSampler(valid_dataset, shuffle=False)
+    valid_loader = DataLoader(
+        valid_dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        drop_last=False,
+        sampler=valid_loader,
+    )
+
+    return train_loader, valid_loader
 
 
 def train_fn(model, loader, device, loss_fn, optimizer, scheduler=None, accumulation_steps=1, verbose=None):
@@ -318,7 +342,7 @@ def train_fn(model, loader, device, loss_fn, optimizer, scheduler=None, accumula
             if scheduler is not None:
                 scheduler.step()
 
-        metrics["loss"].update(_loss, imgs.size(0))
+        metrics["loss"].update(_loss, x.size(0))
 
         if verbose and (batch_index + 1) % int(num_batches * verbose) == 0:
             logger.info("Train {} / {}: loss - {:.5f}".format(batch_index + 1, num_batches, metrics["loss"].average))
@@ -366,7 +390,7 @@ def log_metrics(stage, loader, epoch, metrics):
         if metric_name in metrics:
             value = metrics[metric_name]
             metric_strs.append(f"{metric_name:>10} - {value:.4f}")
-    logger.info(f"stage - {stage}, loder - {loader}, epoch - {epoch}: " + ",".join(metric_strs))
+    logger.info(f"stage - {stage}, loader - {loader}, epoch - {epoch}: " + ",".join(metric_strs))
 
 
 def experiment(local_rank, args=None):
@@ -404,7 +428,7 @@ def experiment(local_rank, args=None):
     logger.info(f"Main metric - '{main_metric}'")
     logger.info(f"Minimize metric - '{minimize_metric}'")
 
-    train_loader, valid_loader, tokenizer = get_loaders()
+    train_loader, valid_loader, tokenizer = get_loaders(args["bs"], args["workers"])
 
     seed_all(42)
     model_args = {}  # TODO: use your own args
