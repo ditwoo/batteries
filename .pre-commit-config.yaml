@@ -3,7 +3,9 @@ repos:
     rev: v3.4.0
     hooks:
     -   id: trailing-whitespace
+        files: batteries/
     -   id: mixed-line-ending
+        files: batteries/
 
 -   repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.7.0
