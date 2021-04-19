@@ -201,7 +201,7 @@ for epoch_index in range(1, n_epochs + 1):
 
 <li> check metric on test set and compare it with validation score </li>
 
-<li> go to 1 and try to improve score on local validation and test set </li>
+<li> go to 1 and try to improve score on validation and test sets </li>
 
 </ol>
 
