@@ -505,12 +505,8 @@ def main():
     parser.add_argument("--batch-size", dest="bs", type=int, help="batch size", default=2)
     parser.add_argument("--num-workers", dest="workers", type=int, help="number of workers to use", default=1)
     parser.add_argument("--num-epochs", dest="epochs", type=int, help="number of epochs to train", default=1)
-    parser.add_argument(
-        "--logdir", dest="logdir", type=str, help="directory where should be stored logs", default="logs/test"
-    )
-    parser.add_argument(
-        "--continue", dest="continue", type=str, help="checkpoint to use for pretrained model", default=None
-    )
+    parser.add_argument("--logdir", type=str, help="directory where should be stored logs", default="logs/test")
+    parser.add_argument("--continue", type=str, help="checkpoint to use for pre-trained model", default=None)
     # put here additional arguments
     # ...
     
