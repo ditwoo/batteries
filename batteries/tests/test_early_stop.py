@@ -1,4 +1,4 @@
-# flake: noqa
+# flake8: noqa
 
 from batteries.early_stop import EarlyStopIndicator
 
