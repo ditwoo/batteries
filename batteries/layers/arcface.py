@@ -75,18 +75,12 @@ class ArcFace(nn.Module):
     def forward(self, input: torch.Tensor, target: torch.LongTensor) -> torch.Tensor:
         """
         Args:
-            input: input features,
-                expected shapes ``BxF`` where ``B``
-                is batch dimension and ``F`` is an
-                input feature dimension.
-            target: target classes,
-                expected shapes ``B`` where
-                ``B`` is batch dimension.
+            input: input features, expected shapes ``BxF`` where ``B`` is batch dimension
+                and ``F`` is an input feature dimension.
+            target: target classes, expected shapes ``B`` where ``B`` is batch dimension.
 
         Returns:
-            tensor (logits) with shapes ``BxC``
-            where ``C`` is a number of classes
-            (out_features).
+            tensor (logits) with shapes ``BxC`` where ``C`` is a number of classes (out_features).
         """
         cos_theta = F.linear(F.normalize(input), F.normalize(self.weight))
         theta = torch.acos(torch.clamp(cos_theta, -1.0 + self.eps, 1.0 - self.eps))
@@ -112,10 +106,8 @@ class SubCenterArcFace(nn.Module):
         https://ibug.doc.ic.ac.uk/media/uploads/documents/eccv_1445.pdf
 
     Shape:
-        - Input: :math:`(batch, H_{in})` where
-          :math:`H_{in} = in\_features`.
-        - Output: :math:`(batch, H_{out})` where
-          :math:`H_{out} = out\_features`.
+        - Input: :math:`(batch, H_{in})` where :math:`H_{in} = in\_features`.
+        - Output: :math:`(batch, H_{out})` where :math:`H_{out} = out\_features`.
 
     Example:
         >>> layer = SubCenterArcFace(5, 10, s=1.31, m=0.35, k=2)
@@ -182,17 +174,12 @@ class SubCenterArcFace(nn.Module):
     def forward(self, input: torch.Tensor, label: torch.LongTensor) -> torch.Tensor:
         """
         Args:
-            input: input features,
-                expected shapes ``BxF`` where ``B``
-                is batch dimension and ``F`` is an
-                input feature dimension.
-            label: target classes,
-                expected shapes ``B`` where
-                ``B`` is batch dimension.
+            input: input features, expected shapes ``BxF`` where ``B`` is batch dimension
+                and ``F`` is an input feature dimension.
+            label: target classes, expected shapes ``B`` where ``B`` is batch dimension.
 
         Returns:
-            tensor (logits) with shapes ``BxC``
-            where ``C`` is a number of classes.
+            tensor (logits) with shapes ``BxC`` where ``C`` is a number of classes.
         """
         cos_theta = torch.bmm(
             F.normalize(input).unsqueeze(0).expand(self.k, *input.shape),  # k*b*f

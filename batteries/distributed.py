@@ -4,6 +4,8 @@ from contextlib import contextmanager
 import torch
 from torch import distributed as dist
 
+__all__ = ("sreduce", "mreduce", "all_gather", "zero_rank_first")
+
 
 def sreduce(tensor):
     """Sum reduce.
@@ -95,11 +97,10 @@ def zero_rank_first(local_rank):
     will do some code block first and wait for other processes to finish.
 
     Example:
-
         >>> # somewhere in DDP code
         >>> import torchvision
         >>> # master process will load data and other processes will use cache
-        >>> with master_process_first(local_rank):
+        >>> with zero_rank_first(local_rank):
         >>>     train_dataset = torchvision.datasets.CIFAR10("/cifat10", train=True, download=True)
         >>>     valid_dataset = torchvision.datasets.CIFAR10("/cifat10", train=False, download=True)
 
@@ -111,6 +112,3 @@ def zero_rank_first(local_rank):
     yield
     if local_rank == 0:
         torch.distributed.barrier()
-
-
-__all__ = ("sreduce", "mreduce", "all_gather", "zero_rank_first")

@@ -22,10 +22,8 @@ class RMSNorm(nn.Module):
         """
         Args:
             in_features: dimension of input features.
-                For example, if input tensor have shape [B, ... , F]
-                then ``in_feautures`` should be equal to F.
-            partial: option to use partial RMSNorm,
-                to enable this features pass a value in a range [0.0, 1.0].
+                For example, if input tensor have shape [B, ... , F] then ``in_feautures`` should be equal to F.
+            partial: option to use partial RMSNorm, to enable this features pass a value in a range [0.0, 1.0].
                 If ``None`` then partial RMSNorm will be disabled.
                 Default is ``None``.
             bias: option to use bias centering.
