@@ -1,4 +1,4 @@
-# flake8: noqa: D401
+# noqa: D401
 
 
 class AverageMetter:

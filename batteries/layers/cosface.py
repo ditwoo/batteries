@@ -13,10 +13,8 @@ class CosFace(nn.Module):
         https://arxiv.org/abs/1801.09414
 
     Shape:
-        - Input: :math:`(batch, H_{in})` where
-          :math:`H_{in} = in\_features`.
-        - Output: :math:`(batch, H_{out})` where
-          :math:`H_{out} = out\_features`.
+        - Input: :math:`(batch, H_{in})` where :math:`H_{in} = in\_features`.
+        - Output: :math:`(batch, H_{out})` where :math:`H_{out} = out\_features`.
 
     Example:
         >>> layer = CosFaceLoss(5, 10, s=1.31, m=0.1)
@@ -103,10 +101,8 @@ class AdaCos(nn.Module):
         https://arxiv.org/abs/1905.00292
 
     Shape:
-        - Input: :math:`(batch, H_{in})` where
-          :math:`H_{in} = in\_features`.
-        - Output: :math:`(batch, H_{out})` where
-          :math:`H_{out} = out\_features`.
+        - Input: :math:`(batch, H_{in})` where :math:`H_{in} = in\_features`.
+        - Output: :math:`(batch, H_{out})` where :math:`H_{out} = out\_features`.
 
     Example:
         >>> layer = AdaCos(5, 10)
@@ -160,18 +156,12 @@ class AdaCos(nn.Module):
     def forward(self, input: torch.Tensor, target: torch.LongTensor) -> torch.Tensor:
         """
         Args:
-            input: input features,
-                expected shapes ``BxF`` where ``B``
-                is batch dimension and ``F`` is an
-                input feature dimension.
-            target: target classes,
-                expected shapes ``B`` where
-                ``B`` is batch dimension.
+            input: input features, expected shapes ``BxF`` where ``B`` is batch dimension
+                and ``F`` is an input feature dimension.
+            target: target classes, expected shapes ``B`` where ``B`` is batch dimension.
 
         Returns:
-            tensor (logits) with shapes ``BxC``
-            where ``C`` is a number of classes
-            (out_features).
+            tensor (logits) with shapes ``BxC`` where ``C`` is a number of classes (out_features).
         """
         cos_theta = F.linear(F.normalize(input), F.normalize(self.weight))
         theta = torch.acos(torch.clamp(cos_theta, -1.0 + self.eps, 1.0 - self.eps))

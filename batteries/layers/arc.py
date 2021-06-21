@@ -7,10 +7,8 @@ class ArcMarginProduct(nn.Module):
     r"""Implementation of Arc Margin Product.
 
     Shape:
-        - Input: :math:`(batch, H_{in})` where
-          :math:`H_{in} = in\_features`.
-        - Output: :math:`(batch, H_{out})` where
-          :math:`H_{out} = out\_features`.
+        - Input: :math:`(batch, H_{in})` where :math:`H_{in} = in\_features`.
+        - Output: :math:`(batch, H_{out})` where :math:`H_{out} = out\_features`.
 
     Example:
         >>> layer = ArcMarginProduct(5, 10)
@@ -43,15 +41,11 @@ class ArcMarginProduct(nn.Module):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         """
         Args:
-            input: input features,
-                expected shapes ``BxF`` where ``B``
-                is batch dimension and ``F`` is an
-                input feature dimension.
+            input: input features, expected shapes ``BxF`` where ``B`` is batch dimension
+                and ``F`` is an input feature dimension.
 
         Returns:
-            tensor (logits) with shapes ``BxC``
-            where ``C`` is a number of classes
-            (out_features).
+            tensor (logits) with shapes ``BxC`` where ``C`` is a number of classes (out_features).
         """
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))
         return cosine
@@ -67,10 +61,8 @@ class SoftMax(nn.Module):
         https://arxiv.org/abs/1712.10151
 
     Shape:
-        - Input: :math:`(batch, H_{in})` where
-          :math:`H_{in} = in\_features`.
-        - Output: :math:`(batch, H_{out})` where
-          :math:`H_{out} = out\_features`.
+        - Input: :math:`(batch, H_{in})` where :math:`H_{in} = in\_features`.
+        - Output: :math:`(batch, H_{out})` where :math:`H_{out} = out\_features`.
 
     Example:
         >>> layer = SoftMax(5, 10)
@@ -106,14 +98,10 @@ class SoftMax(nn.Module):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         """
         Args:
-            input: input features,
-                expected shapes ``BxF`` where ``B``
-                is batch dimension and ``F`` is an
-                input feature dimension.
+            input: input features, expected shapes ``BxF`` where ``B`` is batch dimension
+                and ``F`` is an input feature dimension.
 
         Returns:
-            tensor (logits) with shapes ``BxC``
-            where ``C`` is a number of classes
-            (out_features).
+            tensor (logits) with shapes ``BxC`` where ``C`` is a number of classes (out_features).
         """
         return F.linear(input, self.weight, self.bias)
