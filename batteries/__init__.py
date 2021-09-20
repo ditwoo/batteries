@@ -1,4 +1,5 @@
 # flake8: noqa
+from .ema import EMA
 from .checkpoint import CheckpointManager, average_model_state_dicts, load_checkpoint, make_checkpoint, save_checkpoint
 from .early_stop import EarlyStopIndicator
 from .metrics import AverageMetter
