@@ -5,6 +5,8 @@
 
 ### Added
 
+- Exponential Moving Average
+
 ### Changed
 
 ### Fixed
