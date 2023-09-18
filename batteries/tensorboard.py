@@ -33,7 +33,7 @@ if __name__ == "__main__":
     with TensorboardLogger(logdir) as logger:
         x = np.arange(0, 10, step=0.001)
         for idx, _x in enumerate(x, start=1):
-            logger.add_metric("y=x**2", {"x": _x, "y": _x ** 2}, idx)
+            logger.add_metric("y=x**2", {"x": _x, "y": _x**2}, idx)
 
         for idx, _x in enumerate(x[::10], start=1):
-            logger.add_metric("y=x**3", {"x": _x, "y": _x ** 3}, idx)
+            logger.add_metric("y=x**3", {"x": _x, "y": _x**3}, idx)

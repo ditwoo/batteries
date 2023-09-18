@@ -8,7 +8,7 @@ from batteries.layers import ArcFace, CosFace, SoftMax
 
 
 def normalize(m: np.ndarray) -> np.ndarray:
-    m_s = np.sqrt((m ** 2).sum(axis=1))[:, np.newaxis]  # for each row
+    m_s = np.sqrt((m**2).sum(axis=1))[:, np.newaxis]  # for each row
     return m / m_s
 
 

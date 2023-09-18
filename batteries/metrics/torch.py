@@ -114,7 +114,7 @@ def binary_fbeta(y_true: torch.Tensor, y_pred: torch.Tensor, beta: float = 1, th
         recall = 0.0
 
     try:
-        fbeta = (1 + beta ** 2) * precision * recall / (beta ** 2 * precision + recall)
+        fbeta = (1 + beta**2) * precision * recall / (beta**2 * precision + recall)
     except ZeroDivisionError:
         fbeta = 0.0
 
