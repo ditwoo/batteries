@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 
 NAME = "batteries"
-DESCRIPTION = "Batteries for pytorch experiments."
+DESCRIPTION = "Batteries for PyTorch experiments."
 EMAIL = "ddoroshenko@star.global"
 AUTHOR = "Dmytro Doroshenko"
 REQUIRES_PYTHON = ">=3.6.0"
@@ -17,7 +17,7 @@ def load_requirements():
 
 def load_version():
     context = {}
-    with open(os.path.join(PROJECT_ROOT, "alto_ai", "__version__.py")) as f:
+    with open(os.path.join(PROJECT_ROOT, "batteries", "__version__.py")) as f:
         exec(f.read(), context)
     return context["__version__"]
 
