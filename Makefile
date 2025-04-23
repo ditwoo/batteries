@@ -1,7 +1,7 @@
 
 
 tests: FORCE
-	@ uvx pytest -ra -q -v .
+	@ uv run pytest -ra -q -v
 
 codestyle:
 	@ uvx isort --line-length=120 --profile=black src && \
