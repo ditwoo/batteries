@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v5.0.0
     hooks:
     -   id: trailing-whitespace
         files: src/
@@ -8,7 +8,7 @@ repos:
         files: src/
 
 -   repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.7.0
+    rev: v5.10.1
     hooks:
     -   id: isort
         files: src/
@@ -20,7 +20,7 @@ repos:
         args: [--line-length=120]
 
 -   repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: 25.1.0
     hooks:
     -   id: black
         args: [--line-length=120]

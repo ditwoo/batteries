@@ -19,3 +19,19 @@ dev = [
     "pytest>=7.0.1",
     "scikit-learn>=0.24.2",
 ]
+
+[tool.isort]
+line-length = 120
+profile = "black"
+
+[tool.black]
+line-length = 120
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = [
+    "E203", "Q000", "D100", "D205", "D212", "D400", "D415", "W605",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
