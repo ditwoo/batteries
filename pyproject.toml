@@ -1,17 +1,22 @@
 [project]
 name = "batteries"
-version = "0.3.0"
-description = "Batteries for PyTorch experiments."
 authors = [
     { name = "Dmytro Doroshenko", email = "dimdoroshenko@gmail.com" }
 ]
+description = "Batteries for PyTorch experiments."
+readme = "README.md"
 requires-python = ">=3.6.0"
+keywords = [
+    "pytorch",
+]
 dependencies = [
     "numpy>=1.16.4",
     "tensorboardx>=2.1",
     "torch>=1.1.0",
     "tqdm>=4.33.0",
 ]
+dynamic = ["version"]
+
 
 [dependency-groups]
 dev = [
@@ -20,8 +25,12 @@ dev = [
     "scikit-learn>=0.24.2",
 ]
 
+[tool.pdm.version]
+source = "file"
+path = "timm/version.py"
+
 [tool.isort]
-line-length = 120
+line_length = 120
 profile = "black"
 
 [tool.black]
