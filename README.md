@@ -2,7 +2,7 @@
 ## Batteries
 
 <p align="center">
-    <img src="https://image.flaticon.com/icons/svg/3103/3103476.svg" height="20%" width="20%">
+    <img src="assets/proj_logo.png" height="30%" width="30%">
 </p>
 
 

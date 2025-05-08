@@ -11,6 +11,8 @@
 
 ### Changed
 
+- migrated to `uv`
+
 ### Fixed
 
 - ignore codestyle inside test files

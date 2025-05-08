@@ -6,3 +6,4 @@ from .metrics import AverageMetter
 from .mixup import Mixup, mixup_batch
 from .tensorboard import TensorboardLogger
 from .utils import get_logger, seed_all, t2d, zero_grad
+from .version import __version__ as __version__
