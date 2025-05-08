@@ -5,6 +5,8 @@
 
 ### Added
 
+- Refactored project
+- Migrated to `uv`
 - Exponential Moving Average
 
 ### Changed
