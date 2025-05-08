@@ -1,0 +1,46 @@
+[project]
+name = "batteries"
+authors = [
+    { name = "Dmytro Doroshenko", email = "dimdoroshenko@gmail.com" }
+]
+description = "Batteries for PyTorch experiments."
+readme = "README.md"
+requires-python = ">=3.6.0"
+keywords = [
+    "pytorch",
+]
+dependencies = [
+    "numpy>=1.16.4",
+    "tensorboardx>=2.1",
+    "torch>=1.1.0",
+    "tqdm>=4.33.0",
+]
+dynamic = ["version"]
+
+
+[dependency-groups]
+dev = [
+    "pre-commit>=2.1.1",
+    "pytest>=7.0.1",
+    "scikit-learn>=0.24.2",
+]
+
+[tool.pdm.version]
+source = "file"
+path = "timm/version.py"
+
+[tool.isort]
+line_length = 120
+profile = "black"
+
+[tool.black]
+line-length = 120
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = [
+    "E203", "Q000", "D100", "D205", "D212", "D400", "D415", "W605",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

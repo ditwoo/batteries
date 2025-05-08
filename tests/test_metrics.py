@@ -91,7 +91,7 @@ def test_f2():
     preds = (_sigmoid(logits) >= threshold).astype(int)
     ground_truth = np.random.randint(0, 2, size=size)
 
-    expected = metrics.fbeta_score(ground_truth, preds, 2.0)
+    expected = metrics.fbeta_score(ground_truth, preds, beta=2.0)
     actual = binary_fbeta(
         y_pred=torch.from_numpy(logits),
         y_true=torch.from_numpy(ground_truth),
